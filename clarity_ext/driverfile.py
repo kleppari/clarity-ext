@@ -1,9 +1,9 @@
-import logging
+import os
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import *
-from genologics.epp import attach_file, EppLogger
 from domain import Plate
+
 from utils import lazyprop
 
 
@@ -46,24 +46,34 @@ class GeneratedFile:
     def write_line(self, str):
         self.buffer.append(str + "\n")
 
-    def _save(self):
-        with open(self.name, 'w') as f:
+    def _save(self, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+        full_path = os.path.join(path, self.name)
+        with open(full_path, 'w') as f:
             for line in self.buffer:
                 f.write(line)
 
 
 class DriverFileService:
-    def __init__(self, process_id, path, logger=None):
+    def __init__(self, process_id, script, result_path, logger=None):
         self.logger = logger or logging.getLogger(__name__)
+        self.logger.info("Generating driverfile using script at {}".format(script))
         self.process_id = process_id
-        self.path = path
-        self.logger.info("Generating driverfile using script at {}".format(path))
+        self.path = script
+        self.result_path = result_path
         self.lims = Lims(BASEURI, USERNAME, PASSWORD)
         self.lims.check_version()
         self.current_step = Process(self.lims, id=self.process_id)
         self.logger.info("Got the process step: {}".format(self.current_step))
 
-    def execute(self):
+    def execute(self, commit=False):
+        """
+
+        :param commit: Set to True to write back to the LIMS. Set to False while testing. Then the results of the
+        changes will be written to stdout
+        :return:
+        """
         # Compile the user script:
         with open(self.path, 'r') as f:
             code_str = f.read()
@@ -71,6 +81,9 @@ class DriverFileService:
             compiled = compile(code_str, self.path, 'exec')
             exec compiled
             self.logger.info("Successfully compiled the script")
-            context.outfile._save()
+            context.outfile._save(self.result_path)
             self.logger.info("Output file has been saved")
 
+            if not commit:
+                print "Not committing. File content:"
+            # TODO: Upload to the LIMS

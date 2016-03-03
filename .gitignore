@@ -1,3 +1,5 @@
 *.pyc
 cache.sqlite
+*.egg-info
+.ipynb_checkpoints
 
