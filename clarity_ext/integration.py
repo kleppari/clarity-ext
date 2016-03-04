@@ -6,6 +6,54 @@ import re
 import logging
 
 
+
+# Creates an integration test config file based on convention
+# i.e. position and contents of the script classes themselves.
+# TODO: Move all of this metaprogramming stuff to its own class
+class ConfigFromConventionProvider:
+
+    @classmethod
+    def _enumerate_modules(cls, root_name):
+        import importlib
+        import pkgutil
+        root = importlib.import_module(root_name)
+        for loader, module_name, is_pkg in pkgutil.walk_packages(root.__path__):
+            module = loader.find_module(module_name).load_module(module_name)
+            yield module
+
+    @classmethod
+    def _get_config_by_convention(cls, root):
+        def enumerate():
+            for module in cls._enumerate_modules(root):
+                # Ignore modules that don't have a class named Extension:
+                if hasattr(module, "Extension"):
+                    entry = dict()
+                    entry["name"] = module.__name__
+                    extension_cls = getattr(module, "Extension")
+                    from clarity_ext.extensions import DriverFileExt
+
+                    # NOTE: For some reason, the root does not get added to the enumerated modules
+                    entry["script"] = "{}.{}".format(root, module.__name__)
+
+                    # The command is based on the type:
+                    if issubclass(extension_cls, DriverFileExt):
+                        entry["cmd"] = "driverfile"
+
+                    # Check if the module has more metadata:
+                    entry["tests"] = []
+                    if hasattr(module, "TEST_PIDS"):
+                        test_pids = getattr(module, "TEST_PIDS")
+                        if isinstance(test_pids, str):
+                            test_pids = [test_pids]
+                        for pid in test_pids:
+                            entry["tests"].append({"pid": pid})
+                    yield entry
+
+        return list(enumerate())
+
+
+
+
 class IntegrationTestService:
     CACHE_NAME = "test_run_cache"
 
@@ -36,8 +84,6 @@ class IntegrationTestService:
         pid = test["pid"]
         script = os.path.join(script_root, entry["script"])
         script = os.path.abspath(script)
-        if not os.path.exists(script):
-            raise Exception("No script found at {}".format(script))
         subprocess.call(["clarity-ext", "--cache", self.CACHE_NAME, cmd, pid, script])
 
     def _run(self, entry, script_root, force):
@@ -62,7 +108,7 @@ class IntegrationTestService:
                 os.makedirs(test_run_directory)
                 self._execute_test(entry, test, script_root, test_run_directory)
 
-    def run(self, config, script_root, force=False):
+    def run(self, module, script_root, force=False):
         """
         Runs a new run for all the extensions in the config file
 
@@ -75,7 +121,8 @@ class IntegrationTestService:
         :return:
         """
         script_root = os.path.abspath(script_root)
-        for entry in self._get_config(config):
+        config = ConfigFromConventionProvider._get_config_by_convention(module)
+        for entry in config:
             self._run(entry, script_root, force)
 
     def _freeze_test(self, entry, test):
@@ -116,14 +163,14 @@ class IntegrationTestService:
                 if os.path.exists(directory):
                     yield entry, test
 
-    def freeze(self, config, name=None, test_filter=".*"):
+    def freeze(self, module, name=None, test_filter=".*"):
         """
         Freezes the tests. Call this when you're happy with the results of calling "run".
 
         :param config:
         :return:
         """
-        config_obj = self._get_config(config)
+        config_obj = ConfigFromConventionProvider._get_config_by_convention(module)
         if name is None:
             # freeze all tests that have a run
             print "NOTE: Freezing without a filter. All runs found will be frozen."
@@ -133,7 +180,7 @@ class IntegrationTestService:
             entry = [entry for entry in config_obj if entry["name"] == name][0]
             self._freeze_entry(entry, test_filter)
 
-    def validate(self, config):
+    def validate(self, module):
         """
         Runs the tests on the frozen tests. The idea is that this should run (at least) on every official build,
         thus validating every script against a known state
@@ -141,7 +188,7 @@ class IntegrationTestService:
         :param config:
         :return:
         """
-        config_obj = self._get_config(config)
+        config_obj = ConfigFromConventionProvider._get_config_by_convention(module)
         for entry, test in self._enumerate_frozen_tests(config_obj):
             validate_directory = self._test_validate_directory(entry, test["pid"])
             frozen_directory = self._test_frozen_directory(entry, test["pid"])
@@ -160,6 +207,14 @@ class IntegrationTestService:
         for entry in obj:
             report.append(" - {}".format(entry["name"]))
         return "\n".join(report)
+
+    @staticmethod
+    def config_by_convention(module):
+        """
+        Returns a config object based on convention, i.e. by searching for all
+        extensions in the module and all submodules.
+        """
+        pass
 
 
 class FreezingBeforeRunning(Exception):

@@ -3,7 +3,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import *
 from domain import Plate
-
+import importlib
 from utils import lazyprop
 
 
@@ -56,11 +56,11 @@ class GeneratedFile:
 
 
 class DriverFileService:
-    def __init__(self, process_id, script, result_path, logger=None):
+    def __init__(self, process_id, script_module, result_path, logger=None):
         self.logger = logger or logging.getLogger(__name__)
-        self.logger.info("Generating driverfile using script at {}".format(script))
+        self.logger.info("Generating driverfile using script module '{}'".format(script_module))
+        self.script_module = script_module
         self.process_id = process_id
-        self.path = script
         self.result_path = result_path
         self.lims = Lims(BASEURI, USERNAME, PASSWORD)
         self.lims.check_version()
@@ -74,16 +74,13 @@ class DriverFileService:
         changes will be written to stdout
         :return:
         """
-        # Compile the user script:
-        with open(self.path, 'r') as f:
-            code_str = f.read()
-            context = DriverFileContext(self.current_step, self)
-            compiled = compile(code_str, self.path, 'exec')
-            exec compiled
-            self.logger.info("Successfully compiled the script")
-            context.outfile._save(self.result_path)
-            self.logger.info("Output file has been saved")
-
-            if not commit:
-                print "Not committing. File content:"
-            # TODO: Upload to the LIMS
+        print "HERE!", self.script_module
+        context = DriverFileContext(self.current_step, self)
+        module = importlib.import_module(self.script_module)
+        extension = getattr(module, "Extension")
+        instance = extension(context)
+        self.logger.debug("Successfully created an extension instance. Executing the create method.")
+        instance.create()
+        self.logger.debug("The script has been executed. Saving the file output file")
+        context.outfile._save(self.result_path)
+        # TODO: Upload to the LIMS

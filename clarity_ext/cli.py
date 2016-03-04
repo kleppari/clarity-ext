@@ -31,10 +31,11 @@ def integration_config(config):
 
 
 @main.command("integration-run")
-@click.argument("config")
+#@click.argument("config")
+@click.argument("module")
 @click.option("--root", default=".")
 @click.option("--force/--noforce", default=False)
-def integration_run(config, root, force):
+def integration_run(module, root, force):
     """
     Runs all scripts as they are configured in the config file, if a run doesn't already exist.
 
@@ -44,7 +45,8 @@ def integration_run(config, root, force):
     :return:
     """
     integration_svc = IntegrationTestService()
-    integration_svc.run(config, root, force)
+    integration_svc.run(module, root, force)
+
 
 
 @main.command("integration-freeze")
