@@ -3,7 +3,7 @@ import logging
 import requests_cache
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.driverfile import DriverFileService
-import yaml
+
 
 @click.group()
 @click.option("--level", default="WARN")
@@ -26,16 +26,15 @@ def main(level, cache):
 @click.argument("config")
 def integration_config(config):
     """Parses and prints out the configuration"""
+    raise NotImplementedError("Working on convention stuff")
     integration_svc = IntegrationTestService()
     print integration_svc.report_config(config)
 
 
 @main.command("integration-run")
-#@click.argument("config")
 @click.argument("module")
-@click.option("--root", default=".")
 @click.option("--force/--noforce", default=False)
-def integration_run(module, root, force):
+def integration_run(module, force):
     """
     Runs all scripts as they are configured in the config file, if a run doesn't already exist.
 
@@ -45,8 +44,9 @@ def integration_run(module, root, force):
     :return:
     """
     integration_svc = IntegrationTestService()
-    integration_svc.run(module, root, force)
-
+    integration_svc.run(module, force)
+    print "Done running tests. Freeze them for future use with `clarity-ext integration-freeze {}`".format(
+        module)
 
 
 @main.command("integration-freeze")
@@ -84,10 +84,11 @@ def integration_validate(config):
 
 @main.command()
 @click.argument("pid")
+@click.argument("limsfile")
 @click.argument("script")
 @click.option("--commit/--no-commit", default=False)
 @click.option("--path", default=".")
-def driverfile(pid, script, commit, path):
+def driverfile(pid, limsfile, script, commit, path):
     """
     Generates a file based on the pid (current step id) and a python script.
 
@@ -99,13 +100,10 @@ def driverfile(pid, script, commit, path):
     When hooked up to the LIMS, always set commit to True. When testing locally
     it should not be set.
     """
-    click.echo('Generating driver file: pid={}, script={}, commit={}'.format(pid, script, commit))
-
-    # TODO: Provide file caching for development mode
-    svc = DriverFileService(pid, script, path)
+    click.echo('Generating driver file: pid={}, script={}, commit={}, limsfile={}'
+               .format(pid, script, commit, limsfile))
+    svc = DriverFileService(pid, script, path, limsfile)
     svc.execute(commit)
-
-
 
 if __name__ == "__main__":
     main()
