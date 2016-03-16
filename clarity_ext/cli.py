@@ -30,6 +30,14 @@ def integration_config(config):
     print integration_svc.report_config(config)
 
 
+@main.command("config-pycharm")
+@click.argument("module")
+def config_pycharm(module):
+    """Generates PyCharm configuration for all scripts found"""
+    from clarity_ext.pycharm import generate_pycharm_run_config
+    generate_pycharm_run_config(module)
+
+
 @main.command("integration-run")
 @click.argument("module")
 @click.option("--force/--noforce", default=False)
