@@ -4,7 +4,7 @@ import yaml
 import shutil
 import re
 import logging
-
+from driverfile import DriverFileIntegrationTests
 
 
 # Creates an integration test config file based on convention
@@ -22,7 +22,7 @@ class ConfigFromConventionProvider:
             yield module
 
     @classmethod
-    def _get_config_by_convention(cls, root):
+    def get_config_by_convention(cls, root):
         def enumerate():
             for module in cls._enumerate_modules(root):
                 # Ignore modules that don't have a class named Extension:
@@ -30,6 +30,9 @@ class ConfigFromConventionProvider:
                     entry = dict()
                     entry["name"] = module.__name__
                     extension_cls = getattr(module, "Extension")
+                    # NOTE: It's kind of ugly that the tests method isn't a class method
+                    # However, I want it to be an abstractmethod on the base class.
+                    extension = extension_cls(None)
                     from clarity_ext.extensions import DriverFileExt
 
                     # NOTE: For some reason, the root does not get added to the enumerated modules
@@ -41,17 +44,12 @@ class ConfigFromConventionProvider:
 
                     # Check if the module has more metadata:
                     entry["tests"] = []
-                    if hasattr(module, "TEST_PIDS"):
-                        test_pids = getattr(module, "TEST_PIDS")
-                        if isinstance(test_pids, str):
-                            test_pids = [test_pids]
-                        for pid in test_pids:
-                            entry["tests"].append({"pid": pid})
+
+                    for test in extension.integration_tests():
+                        entry["tests"].append({"pid": test.step, "out_file": test.out_file})
                     yield entry
 
         return list(enumerate())
-
-
 
 
 class IntegrationTestService:
@@ -60,10 +58,6 @@ class IntegrationTestService:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
         self.CACHE_FULL_NAME = "{}.sqlite".format(self.CACHE_NAME)
-
-    @staticmethod
-    def _test_validate_directory(config_entry, pid):
-        return os.path.join(".", "runs", config_entry["name"], pid, "test-validate")
 
     @staticmethod
     def _test_run_directory(config_entry, pid):
@@ -78,16 +72,46 @@ class IntegrationTestService:
         stream = file(path, 'r')
         return yaml.load(stream)
 
-    def _execute_test(self, entry, test, script_root, directory):
-        os.chdir(directory)
+    def _enumerate_frozen_files(self, frozen_dir):
+        for dirpath, dirnames, filenames in os.walk(os.path.join(frozen_dir)):
+            for filename in filenames:
+                yield dirpath, filename
+
+    def _validate_run(self, entry):
+        if entry["cmd"] == "driverfile":
+            test_provider = DriverFileIntegrationTests()
+            for test in entry["tests"]:
+                run_path = self._test_run_directory(entry, test["pid"])
+                frozen_path = self._test_frozen_directory(entry, test["pid"])
+                test_provider.validate(run_path, frozen_path, test)
+
+    def _execute_test(self, entry, test, script_module, directory, validating):
+        """
+        script_module is any Python module that contains a class called Extension
+        TODO: Allow the name to be prefixed with anything
+        """
         cmd = entry["cmd"]
         pid = test["pid"]
-        script = os.path.join(script_root, entry["script"])
-        script = os.path.abspath(script)
-        subprocess.call(["clarity-ext", "--cache", self.CACHE_NAME, cmd, pid, script])
+        limsfile = test["out_file"]
+        # NOTE: Refactor to be in-process? Like it's now, it can be run again using the command line only
+        # and so it's a bit simpler although it has other downsides, such as needing to pass log-level state
+        # and losing the stacktrace.
+        level = logging.getLevelName(logging.getLogger().getEffectiveLevel())
+        args = ["clarity-ext",
+                "--level", level,
+                "--cache", self.CACHE_NAME,
+                cmd, pid, limsfile, script_module]
+        self.logger.info("Executing process: {}".format(" ".join(args)))
+        old_dir = os.getcwd()
+        os.chdir(directory)
+        subprocess.call(args)
+        os.chdir(old_dir)
 
-    def _run(self, entry, script_root, force):
-        print "Running test '{}'".format(entry["name"])
+        if validating:
+            self._validate_run(entry)
+
+    def _run(self, entry, script_root, force, validating):
+        self.logger.info("Running test '{}', force={}, validating={}".format(entry["name"], force, validating))
         tests = entry["tests"]
         if not tests:
             print "- No tests are configured. Ignoring"
@@ -98,17 +122,24 @@ class IntegrationTestService:
                 test_run_directory = self._test_run_directory(entry, pid)
                 if os.path.exists(test_run_directory):
                     if force:
-                        print "We already got a test run folder at {}. Recreating it.".format(test_run_directory)
+                        self.logger.info(
+                            "We already got a test run folder at {}. Recreating it.".format(test_run_directory))
                         shutil.rmtree(test_run_directory)
                     else:
-                        print "Test results already exist and force is not set to True"
+                        self.logger.info("Test results already exist and force is not set to True")
                         continue
-
-                print "Running configured action"
                 os.makedirs(test_run_directory)
-                self._execute_test(entry, test, script_root, test_run_directory)
 
-    def run(self, module, script_root, force=False):
+                if validating:
+                    frozen_cache = os.path.join(self._test_frozen_directory(entry, pid), self.CACHE_FULL_NAME)
+                    self.logger.info("Validating. Copy the cache over from the frozen tests in '{}'".
+                                     format(frozen_cache))
+                    shutil.copy(frozen_cache, test_run_directory)
+
+                self._execute_test(entry, test, script_root, test_run_directory, validating)
+                print "Executed test in {}".format(test_run_directory)
+
+    def run(self, module, force=False, validating=False):
         """
         Runs a new run for all the extensions in the config file
 
@@ -120,10 +151,9 @@ class IntegrationTestService:
         :param force:
         :return:
         """
-        script_root = os.path.abspath(script_root)
-        config = ConfigFromConventionProvider._get_config_by_convention(module)
+        config = ConfigFromConventionProvider.get_config_by_convention(module)
         for entry in config:
-            self._run(entry, script_root, force)
+            self._run(entry, entry["script"], force, validating)
 
     def _freeze_test(self, entry, test):
         source = self._test_run_directory(entry, test["pid"])
@@ -170,7 +200,7 @@ class IntegrationTestService:
         :param config:
         :return:
         """
-        config_obj = ConfigFromConventionProvider._get_config_by_convention(module)
+        config_obj = ConfigFromConventionProvider.get_config_by_convention(module)
         if name is None:
             # freeze all tests that have a run
             print "NOTE: Freezing without a filter. All runs found will be frozen."
@@ -188,16 +218,8 @@ class IntegrationTestService:
         :param config:
         :return:
         """
-        config_obj = ConfigFromConventionProvider._get_config_by_convention(module)
-        for entry, test in self._enumerate_frozen_tests(config_obj):
-            validate_directory = self._test_validate_directory(entry, test["pid"])
-            frozen_directory = self._test_frozen_directory(entry, test["pid"])
-            if os.path.exists(validate_directory):
-                logging.debug("Validation folder exists. Removing it.")
-                shutil.rmtree(validate_directory)
-            os.makedirs(validate_directory)
-            cache_file = os.path.join(frozen_directory, self.CACHE_FULL_NAME)
-            shutil.copy(cache_file, validate_directory)
+        self.logger.info("Validating, do a force run")
+        self.run(module, force=True, validating=True)
 
     def report_config(self, config):
         """Parses the config and prints out a summary"""

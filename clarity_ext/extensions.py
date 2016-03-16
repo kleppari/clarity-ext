@@ -13,12 +13,31 @@ class DriverFileExt:
         """
         @type context: clarity_ext.driverfile.DriverFileContext
 
-        :param context:
-        :return:
+        :param context: The context the extension is running in. Can be used to access
+                        the plate etc.
+        :return: None
         """
         self.context = context
 
     @abstractmethod
-    def create(self):
+    def content(self):
+        """Yields the output lines of the file"""
         pass
+
+    @abstractmethod
+    def filename(self):
+        """Returns the name of the file"""
+        pass
+
+    @abstractmethod
+    def integration_tests(self):
+        """Returns `DriverFileTest`s that should be run to validate the code"""
+        pass
+
+
+class DriverFileTest:
+    """Represents data needed to test a driver file against a running LIMS server"""
+    def __init__(self, step, out_file):
+        self.step = step
+        self.out_file = out_file
 
