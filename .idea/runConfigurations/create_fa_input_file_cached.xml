@@ -15,7 +15,7 @@
     <option name="ADD_SOURCE_ROOTS" value="false" />
     <module name="extensions" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/clarity_ext/cli.py" />
-    <option name="PARAMETERS" value="--cache cache extension clarity_ext_scripts.fragment_analyzer.create_fa_input_file --stdout" />
+    <option name="PARAMETERS" value="--level DEBUG --cache cache extension clarity_ext_scripts.fragment_analyzer.create_fa_input_file --stdout" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <method />
   </configuration>

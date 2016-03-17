@@ -2,7 +2,7 @@
 # for each analyte within a given process.
 # User provide target concentration and target volume for each analyte.
 # Give error if any volume is less than 2 ul
-# Give error if any volume exceeds 50 ul
+# Give error if any volume exceeds 51 ul
 
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD

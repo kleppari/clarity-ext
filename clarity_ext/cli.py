@@ -16,9 +16,9 @@ def main(level, cache):
                 This is used to ensure reproducible and fast integration tests
     :return:
     """
+    logging.basicConfig(level=level)
     if cache:
         requests_cache.install_cache(cache)
-    logging.basicConfig(level=level)
 
 
 @main.command("integration-config")
