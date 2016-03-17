@@ -7,7 +7,10 @@ import inspect
 from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonReader as FileReader
 from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonColumnReference as ColumnRef
 
-DRIVER_FILE_RELATIVE_PATH = "..\..\mock\dilute_files\SX614_SX686_160308_4_J_Ham.txt"
+# TODO: Move the resource file closer to the corresponding test
+DRIVER_FILE_RELATIVE_PATH = os.path.join(os.path.dirname(__file__),
+                                         "../../mock/dilute_files",
+                                         "SX614_SX686_160308_4_J_Ham.txt")
 
 
 # noinspection SpellCheckingInspection
