@@ -11,7 +11,7 @@ class Extension(DriverFileExt):
         """Returns the name of the file to be uploaded"""
         today = datetime.date.today()
         prefix = today.strftime("%y%m%d")
-        return "{}_{}.{}".format(prefix, "FA_input", "csv")
+        return "{}_{}.{}".format(prefix, "FA_input", "txt")
 
     def content(self):
         """Yields the lines to be written to the file"""

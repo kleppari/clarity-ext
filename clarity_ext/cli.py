@@ -3,6 +3,7 @@ import logging
 import requests_cache
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.driverfile import DriverFileService
+from clarity_ext.extensions import ExtensionService
 
 
 @click.group()
@@ -16,8 +17,6 @@ def main(level, cache):
     :return:
     """
     if cache:
-        click.echo("Running with the cache '{}'. If the requests exist in the cache, they will be used".
-                   format(cache))
         requests_cache.install_cache(cache)
     logging.basicConfig(level=level)
 
@@ -29,6 +28,14 @@ def integration_config(config):
     raise NotImplementedError("Working on convention stuff")
     integration_svc = IntegrationTestService()
     print integration_svc.report_config(config)
+
+
+@main.command("config-pycharm")
+@click.argument("module")
+def config_pycharm(module):
+    """Generates PyCharm configuration for all scripts found"""
+    from clarity_ext.pycharm import generate_pycharm_run_config
+    generate_pycharm_run_config(module)
 
 
 @main.command("integration-run")
@@ -104,6 +111,16 @@ def driverfile(pid, limsfile, script, commit, path):
                .format(pid, script, commit, limsfile))
     svc = DriverFileService(pid, script, path, limsfile)
     svc.execute(commit)
+
+
+@main.command()
+@click.argument("module")
+@click.option("--stdout/--no-stdout", default=False)
+def extension(module, stdout):
+    """Loads the extension and executes the integration tests."""
+    extension_svc = ExtensionService()
+    print stdout
+    extension_svc.execute(module, artifacts_to_stdout=stdout)
 
 if __name__ == "__main__":
     main()
