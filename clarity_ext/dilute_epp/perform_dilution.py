@@ -110,8 +110,11 @@ class DilutionFileBuilder:
         return driver_file_contents
 
 
-def create_driver_file(process_uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3251",
-                       driver_file=None):
+def create_driver_file(pid="24-3251", driver_file=None):
+
+    # TODO: Use the genologics client instead
+    process_uri = "{}{}{}".format(BASEURI, "/api/v2/processes/", pid)
+    print process_uri
 
     db_process_initializer = DBProcessInitializer(process_uri)
 
@@ -155,10 +158,12 @@ def _check_warnings(dilution):
 
 
 if __name__ == "__main__":
+    print BASEURI
+
     parser = ArgumentParser(description=DESC)
-    parser.add_argument("--processURI", required=True,
+    parser.add_argument("--pid", required=True,
                         help="The process URI from where this script is run")
     parser.add_argument("--driverFile", required=True,
                         help="The path + name of the dilute driver file")
     args = parser.parse_args()
-    create_driver_file(args.processURI, args.driverFile)
+    create_driver_file(args.pid, args.driverFile)

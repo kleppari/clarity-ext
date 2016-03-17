@@ -7,7 +7,7 @@ from clarity_ext.utility.hamilton_driver_file_reader import HamiltonReader
 from clarity_ext.utility.hamilton_driver_file_reader import HamiltonColumnReference
 from ....dilute_epp import perform_dilution
 
-TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3624"
+TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3637"
 SAMPLE1 = "EdvardProv50"
 SAMPLE2 = "EdvardProv51"
 SAMPLE3 = "EdvardProv52"

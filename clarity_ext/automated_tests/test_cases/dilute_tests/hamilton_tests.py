@@ -1,12 +1,13 @@
 # Unit test the output of the dilution script, generating driver file for Hamilton
 # Using the utility in dilute_filer_reader
 
+"""
 import unittest
 from clarity_ext.utility.hamilton_driver_file_reader import HamiltonReader
 from clarity_ext.utility.hamilton_driver_file_reader import HamiltonColumnReference
 from ....dilute_epp import perform_dilution
 
-TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3251"
+TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3637"
 SAMPLE1 = "EdvardsProv1Updated"
 SAMPLE2 = "EdvardsProv3"
 SAMPLE3 = "EdvardsProv2"
@@ -17,6 +18,7 @@ class HamiltonTests(unittest.TestCase):
 
     def setUp(self):
         driver_file_contents = perform_dilution.create_driver_file(TEST_PROCESS_URI, None)
+        print driver_file_contents
         self.hamilton_reader = HamiltonReader(driver_file_contents)
         self.column_ref = HamiltonColumnReference()
 
@@ -48,3 +50,4 @@ class HamiltonTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+"""
