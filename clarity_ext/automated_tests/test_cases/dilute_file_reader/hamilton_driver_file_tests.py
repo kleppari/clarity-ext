@@ -4,8 +4,8 @@
 import unittest
 import os
 import inspect
-from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonReader as FileReader
-from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonColumnReference as ColumnRef
+from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonReader
+from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonColumnReference
 
 # TODO: Move the resource file closer to the corresponding test
 DRIVER_FILE_RELATIVE_PATH = os.path.join(os.path.dirname(__file__),
@@ -22,8 +22,8 @@ class HamiltonDriverFileTests(unittest.TestCase):
         driverfilepath = os.path.join(currentdir, DRIVER_FILE_RELATIVE_PATH)
         with open(driverfilepath, 'r') as driverfile:
             filecontents = driverfile.read()
-        self.file_reader = FileReader(filecontents)
-        self.column_ref = ColumnRef()
+        self.file_reader = HamiltonReader(filecontents)
+        self.column_ref = HamiltonColumnReference()
 
     def test_number_columns(self):
         self.assertEqual(self.file_reader.number_columns(), 7,
