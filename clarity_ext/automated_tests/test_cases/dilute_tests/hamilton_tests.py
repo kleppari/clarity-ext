@@ -2,10 +2,8 @@
 # Using the utility in dilute_filer_reader
 
 import unittest
-import os
-import inspect
-from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonReader as FileReader
-from ...utility.dilute_filer_reader.hamilton_driver_file_reader import HamiltonColumnReference as ColumnRef
+from clarity_ext.utility.hamilton_driver_file_reader import HamiltonReader
+from clarity_ext.utility.hamilton_driver_file_reader import HamiltonColumnReference
 from ....dilute_epp import perform_dilution
 
 TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3251"
@@ -19,8 +17,8 @@ class HamiltonTests(unittest.TestCase):
 
     def setUp(self):
         driver_file_contents = perform_dilution.create_driver_file(TEST_PROCESS_URI, None)
-        self.hamilton_reader = FileReader(driver_file_contents)
-        self.column_ref = ColumnRef()
+        self.hamilton_reader = HamiltonReader(driver_file_contents)
+        self.column_ref = HamiltonColumnReference()
 
     def test_import_hamilton_reader(self):
         self.assertIsNotNone(self.hamilton_reader,
