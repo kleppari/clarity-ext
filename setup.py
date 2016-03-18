@@ -3,7 +3,7 @@ Main entry point for Clarity extensions in the SNP&SEQ installation
 """
 from setuptools import find_packages, setup
 
-dependencies = ['click', 'genologics']
+dependencies = ['click', 'genologics', 'requests-cache', 'pyyaml', 'nose']
 
 setup(
     name='clarity-ext',
