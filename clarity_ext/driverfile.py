@@ -3,16 +3,22 @@ from genologics.lims import Lims
 from genologics.epp import attach_file
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import *
-from domain import Plate
+from clarity_ext.domain import Plate, Analyte, DilutionScheme
 import importlib
 from utils import lazyprop
 import shutil
 import difflib
 
+
 # The object accessible during execution of the driver file script:
 # Contains things like the current plate.
 # The underlying connection objects etc. can be accessed through "advanced"
 class DriverFileContext:
+    """
+    Context object for DriverFile extensions
+
+    Provides context objects as lazy properties.
+    """
     def __init__(self, current_step, advanced, logger=None):
         self.current_step = current_step
         self.advanced = advanced
@@ -21,7 +27,7 @@ class DriverFileContext:
     @lazyprop
     def plate(self):
         self.logger.debug("Getting current plate (lazy property)")
-        # TODO: Assumes 96 well plate!
+        # TODO: Assumes 96 well plate only
         plate = Plate()
         for input, output in self.current_step.input_output_maps:
             if output['output-generation-type'] == "PerInput":
@@ -31,6 +37,34 @@ class DriverFileContext:
                 well = location[1]
                 plate.set_well(well, artifact.name)
         return plate
+
+    @lazyprop
+    def dilution_scheme(self):
+        # TODO: Might want to have this on a property called dilution
+        return DilutionScheme(self.input_analytes,
+                              self.output_analytes)
+
+    @lazyprop
+    def input_analytes(self):
+        input_uris = []
+        for input_uri, _ in self.current_step.input_output_maps:
+            if input_uri:
+                input_uris.append(input_uri["uri"])
+        resources = self.advanced.lims.get_batch(input_uris)
+        return [Analyte(resource) for resource in resources]
+
+    @lazyprop
+    def output_analytes(self):
+        # TODO: Could be more DRY
+        # TODO: Doesn't there exist anything for this in the genologics package?
+        # TODO: I believe that the rest client already caches input_output_maps in-process,
+        #       if not, put that into a lazyprop too
+        output_uris = []
+        for _, output_uri in self.current_step.input_output_maps:
+            if output_uri and output_uri["output-type"] == "Analyte":
+                output_uris.append(output_uri["uri"])
+        resources = self.advanced.lims.get_batch(output_uris)
+        return [Analyte(resource) for resource in resources]
 
 
 class DriverFileService:
@@ -54,13 +88,12 @@ class DriverFileService:
         :return:
         """
         self.logger.info("Generating DriverFile for step={}".format(self.current_step))
-        context = DriverFileContext(self.current_step, self)
+        context = DriverFileContext(self.current_step, advanced=self)
         self.logger.debug("Created a context file for the current step, {}".format(self.current_step))
         module = importlib.import_module(self.script_module)
         extension = getattr(module, "Extension")
         instance = extension(context)
         self.logger.debug("Successfully created an extension instance. Executing the create method.")
-        self.logger.debug("The script has been executed. Saving the file output file to {}".format(self.result_path))
 
         # Save the file to the directory:
         local_file = self._save_file_locally(instance, self.result_path)
@@ -143,14 +176,12 @@ class DriverFileIntegrationTests:
 
     def validate(self, run_directory, frozen_directory, test):
         pair = self._locate_driver_file_pair(run_directory, frozen_directory, test)
-        print pair
         fromfile, tofile = pair
         fromlines = open(fromfile, 'r').readlines()  # U?
         tolines = open(tofile, 'r').readlines()
         diff = list(difflib.unified_diff(fromlines, tolines, fromfile, tofile))
         if len(diff) > 0:
             raise FilesDifferException("Diff (max 100 lines):\n{}".format("".join(diff[0:100])))
-
 
 
 class FilesDifferException(Exception):

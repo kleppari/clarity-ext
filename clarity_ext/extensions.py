@@ -2,6 +2,7 @@ import importlib
 import os
 import shutil
 from clarity_ext.driverfile import DriverFileService
+import logging
 
 # Defines all classes that are expected to be extended. These are
 # also imported to the top-level module
@@ -20,9 +21,10 @@ class ExtensionService:
         :return:
         """
         def files_to_remove(path):
-            for item in os.listdir(path):
-                if item != "cache.sqlite":
-                    yield os.path.join(path, item)
+            if os.path.exists(path):
+                for item in os.listdir(path):
+                    if item != "cache.sqlite":
+                        yield os.path.join(path, item)
 
         module_obj = importlib.import_module(module)
         extension = getattr(module_obj, "Extension")
@@ -62,6 +64,8 @@ class DriverFileExt:
         :return: None
         """
         self.context = context
+        # TODO: Use full namespace of the implementing extension class instead
+        self.logger = logging.getLogger(self.__class__.__module__)
 
     @abstractmethod
     def content(self):
@@ -77,6 +81,16 @@ class DriverFileExt:
     def integration_tests(self):
         """Returns `DriverFileTest`s that should be run to validate the code"""
         pass
+
+    def handle_validation(self, validation_results):
+        # TODO: Move this code to a validation service
+        # TODO: Communicate this to the LIMS rather than throwing an exception
+        results = list(validation_results)
+        #warnings = [result for result in results if result.type == ValidationType.WARNING]
+        #errors = [result for result in results if result.type == ValidationType.ERROR]
+        report = [repr(result) for result in results]
+        if len(results) > 0:
+            raise ValueError("Validation errors: ".format(os.path.sep.join(report)))
 
 
 class DriverFileTest:
