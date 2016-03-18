@@ -17,8 +17,10 @@ def main(level, cache):
     :return:
     """
     logging.basicConfig(level=level)
+    # TODO: Add a file based implementation for reqests-cache, so we can
+    # code review it (and filter) and check the cached values into the same repo.
     if cache:
-        requests_cache.install_cache(cache)
+        requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'))
 
 
 @main.command("integration-config")

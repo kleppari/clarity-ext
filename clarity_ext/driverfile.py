@@ -94,7 +94,6 @@ class DriverFileService:
         extension = getattr(module, "Extension")
         instance = extension(context)
         self.logger.debug("Successfully created an extension instance. Executing the create method.")
-        self.logger.debug("The script has been executed. Saving the file output file to {}".format(self.result_path))
 
         # Save the file to the directory:
         local_file = self._save_file_locally(instance, self.result_path)
@@ -177,7 +176,6 @@ class DriverFileIntegrationTests:
 
     def validate(self, run_directory, frozen_directory, test):
         pair = self._locate_driver_file_pair(run_directory, frozen_directory, test)
-        print pair
         fromfile, tofile = pair
         fromlines = open(fromfile, 'r').readlines()  # U?
         tolines = open(tofile, 'r').readlines()

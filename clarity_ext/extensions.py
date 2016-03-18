@@ -2,7 +2,7 @@ import importlib
 import os
 import shutil
 from clarity_ext.driverfile import DriverFileService
-from domain import ValidationException, ValidationType
+import logging
 
 # Defines all classes that are expected to be extended. These are
 # also imported to the top-level module
@@ -22,7 +22,6 @@ class ExtensionService:
         """
         def files_to_remove(path):
             if os.path.exists(path):
-                print "M{},{}".format(path, os.path.curdir)
                 for item in os.listdir(path):
                     if item != "cache.sqlite":
                         yield os.path.join(path, item)
@@ -38,7 +37,6 @@ class ExtensionService:
                 path = os.path.sep.join(parts)
                 # Remove everything but the cache file
 
-                print list(files_to_remove(path))
                 for item in files_to_remove(path):
                     if os.path.isdir(item):
                         shutil.rmtree(item)
@@ -66,6 +64,8 @@ class DriverFileExt:
         :return: None
         """
         self.context = context
+        # TODO: Use full namespace of the implementing extension class instead
+        self.logger = logging.getLogger(self.__class__.__module__)
 
     @abstractmethod
     def content(self):
