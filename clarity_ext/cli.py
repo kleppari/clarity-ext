@@ -1,9 +1,11 @@
 import click
 import logging
 import requests_cache
+from clarity_ext.utils import use_requests_cache
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.driverfile import DriverFileService
 from clarity_ext.extensions import ExtensionService
+from utils import RequestsFileCache
 
 
 @click.group()
@@ -17,11 +19,10 @@ def main(level, cache):
     :return:
     """
     logging.basicConfig(level=level)
-    # TODO: Add a file based implementation for reqests-cache, so we can
+    # TODO: Add a file based implementation for requests-cache, so we can
     # code review it (and filter) and check the cached values into the same repo.
     if cache:
-        requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'))
-
+        use_requests_cache(cache)
 
 @main.command("integration-config")
 @click.argument("config")
