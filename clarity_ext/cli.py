@@ -1,11 +1,9 @@
 import click
 import logging
-import requests_cache
 from clarity_ext.utils import use_requests_cache
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.driverfile import DriverFileService
 from clarity_ext.extensions import ExtensionService
-from utils import RequestsFileCache
 
 
 @click.group()
@@ -93,37 +91,20 @@ def integration_validate(config):
 
 
 @main.command()
-@click.argument("pid")
-@click.argument("limsfile")
-@click.argument("script")
-@click.option("--commit/--no-commit", default=False)
-@click.option("--path", default=".")
-def driverfile(pid, limsfile, script, commit, path):
-    """
-    Generates a file based on the pid (current step id) and a python script.
-
-    The script will be executed inside a sandbox that has already set up.
-
-    It has access to the following (may be lazily materialized):
-    TODO: Document the context
-
-    When hooked up to the LIMS, always set commit to True. When testing locally
-    it should not be set.
-    """
-    click.echo('Generating driver file: pid={}, script={}, commit={}, limsfile={}'
-               .format(pid, script, commit, limsfile))
-    svc = DriverFileService(pid, script, path, limsfile)
-    svc.execute(commit)
-
-
-@main.command()
 @click.argument("module")
+@click.argument("mode")
 @click.option("--stdout/--no-stdout", default=False)
-def extension(module, stdout):
-    """Loads the extension and executes the integration tests."""
+def extension(module, mode, stdout):
+    """Loads the extension and executes the integration tests.
+
+    :param mode: One of
+        exec: Execute the code in normal mode
+        test: Test the code locally
+        freeze: Freeze an already created test (move from test-run to test-frozen)
+        validate: Test the code locally, then compare with the frozen directory
+    """
     extension_svc = ExtensionService()
-    print stdout
-    extension_svc.execute(module, artifacts_to_stdout=stdout)
+    extension_svc.execute(module, mode, artifacts_to_stdout=stdout)
 
 if __name__ == "__main__":
     main()

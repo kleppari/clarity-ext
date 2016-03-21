@@ -6,3 +6,4 @@ runs/
 .idea/*
 .idea/*/
 !.idea/runConfigurations
+run-test/

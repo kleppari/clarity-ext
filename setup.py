@@ -3,6 +3,7 @@ Main entry point for Clarity extensions in the SNP&SEQ installation
 """
 from setuptools import find_packages, setup
 
+# TODO: requests-cache should be from https://github.com/withrocks/requests-cache
 dependencies = ['click', 'genologics', 'requests-cache', 'pyyaml', 'nose']
 
 setup(

@@ -1,0 +1,222 @@
+[
+ {
+  "_content": "See *.content", 
+  "cookies": {
+   "_cookies": {
+    "lims-staging.snpseq.medsci.uu.se": {
+     "/api/": {
+      "JSESSIONID": {
+       "_rest": {
+        "HttpOnly": null
+       }, 
+       "comment": null, 
+       "comment_url": null, 
+       "discard": true, 
+       "domain": "lims-staging.snpseq.medsci.uu.se", 
+       "domain_initial_dot": false, 
+       "domain_specified": false, 
+       "expires": null, 
+       "name": "JSESSIONID", 
+       "path": "/api/", 
+       "path_specified": true, 
+       "port": null, 
+       "port_specified": false, 
+       "rfc2109": false, 
+       "secure": true, 
+       "value": "37C072243535D9977C595F5B433DC6C3", 
+       "version": 0
+      }
+     }
+    }
+   }, 
+   "_cookies_lock": {
+    "_RLock__block": "<type 'thread.lock'> can't be serialized", 
+    "_RLock__count": 0, 
+    "_RLock__owner": null, 
+    "_Verbose__verbose": false
+   }, 
+   "_now": 1458575336, 
+   "_policy": {
+    "_allowed_domains": null, 
+    "_blocked_domains": [], 
+    "_now": 1458575336, 
+    "hide_cookie2": false, 
+    "netscape": true, 
+    "rfc2109_as_netscape": null, 
+    "rfc2965": false, 
+    "strict_domain": false, 
+    "strict_ns_domain": 0, 
+    "strict_ns_set_initial_dollar": false, 
+    "strict_ns_set_path": false, 
+    "strict_ns_unverifiable": false, 
+    "strict_rfc2965_unverifiable": true
+   }
+  }, 
+  "encoding": null, 
+  "headers": {
+   "_store": {
+    "connection": [
+     "Connection", 
+     "close"
+    ], 
+    "content-length": [
+     "Content-Length", 
+     "3823"
+    ], 
+    "content-type": [
+     "Content-Type", 
+     "application/xml"
+    ], 
+    "date": [
+     "Date", 
+     "Mon, 21 Mar 2016 15:49:16 GMT"
+    ], 
+    "set-cookie": [
+     "Set-Cookie", 
+     "JSESSIONID=37C072243535D9977C595F5B433DC6C3; Path=/api/; Secure; HttpOnly"
+    ]
+   }
+  }, 
+  "history": {}, 
+  "raw": {
+   "_original_response": {
+    "_method": "POST", 
+    "chunk_left": "UNKNOWN", 
+    "chunked": 0, 
+    "debuglevel": 0, 
+    "fp": null, 
+    "length": 0, 
+    "msg": {
+     "dict": {
+      "connection": "close", 
+      "content-length": "3823", 
+      "content-type": "application/xml", 
+      "date": "Mon, 21 Mar 2016 15:49:16 GMT", 
+      "set-cookie": "JSESSIONID=37C072243535D9977C595F5B433DC6C3; Path=/api/; Secure; HttpOnly"
+     }, 
+     "encodingheader": null, 
+     "fp": null, 
+     "headers": [
+      "Date: Mon, 21 Mar 2016 15:49:16 GMT\r\n", 
+      "Set-Cookie: JSESSIONID=37C072243535D9977C595F5B433DC6C3; Path=/api/; Secure; HttpOnly\r\n", 
+      "Content-Type: application/xml\r\n", 
+      "Content-Length: 3823\r\n", 
+      "Connection: close\r\n"
+     ], 
+     "maintype": "application", 
+     "plist": [], 
+     "plisttext": "", 
+     "seekable": 0, 
+     "startofbody": null, 
+     "startofheaders": null, 
+     "status": "", 
+     "subtype": "xml", 
+     "type": "application/xml", 
+     "typeheader": "application/xml", 
+     "unixfrom": ""
+    }, 
+    "reason": "OK", 
+    "status": 200, 
+    "strict": true, 
+    "version": 11, 
+    "will_close": true
+   }, 
+   "decode_content": false, 
+   "headers": {
+    "_container": {
+     "connection": [
+      "Connection", 
+      "close"
+     ], 
+     "content-length": [
+      "Content-Length", 
+      "3823"
+     ], 
+     "content-type": [
+      "Content-Type", 
+      "application/xml"
+     ], 
+     "date": [
+      "Date", 
+      "Mon, 21 Mar 2016 15:49:16 GMT"
+     ], 
+     "set-cookie": [
+      "Set-Cookie", 
+      "JSESSIONID=37C072243535D9977C595F5B433DC6C3; Path=/api/; Secure; HttpOnly"
+     ]
+    }
+   }, 
+   "reason": "OK", 
+   "status": 200, 
+   "strict": true, 
+   "version": 11
+  }, 
+  "reason": "OK", 
+  "request": {
+   "_cookies": {
+    "_cookies": {}, 
+    "_cookies_lock": {
+     "_RLock__block": "<type 'thread.lock'> can't be serialized", 
+     "_RLock__count": 0, 
+     "_RLock__owner": null, 
+     "_Verbose__verbose": false
+    }, 
+    "_now": 1458575336, 
+    "_policy": {
+     "_allowed_domains": null, 
+     "_blocked_domains": [], 
+     "_now": 1458575336, 
+     "hide_cookie2": false, 
+     "netscape": true, 
+     "rfc2109_as_netscape": null, 
+     "rfc2965": false, 
+     "strict_domain": false, 
+     "strict_ns_domain": 0, 
+     "strict_ns_set_initial_dollar": false, 
+     "strict_ns_set_path": false, 
+     "strict_ns_unverifiable": false, 
+     "strict_rfc2965_unverifiable": true
+    }
+   }, 
+   "body": "<?xml version='1.0' encoding='UTF-8'?>\n<ri:links xmlns:ri=\"http://genologics.com/ri\"><link rel=\"artifacts\" uri=\"https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7046?state=3897\" /><link rel=\"artifacts\" uri=\"https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7045?state=3896\" /><link rel=\"artifacts\" uri=\"https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7044?state=3895\" /><link rel=\"artifacts\" uri=\"https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7043?state=3894\" /></ri:links>", 
+   "headers": {
+    "_store": {
+     "accept": [
+      "accept", 
+      "application/xml"
+     ], 
+     "accept-encoding": [
+      "Accept-Encoding", 
+      "gzip, deflate"
+     ], 
+     "authorization": [
+      "authorization", 
+      "***"
+     ], 
+     "connection": [
+      "Connection", 
+      "keep-alive"
+     ], 
+     "content-length": [
+      "Content-Length", 
+      "520"
+     ], 
+     "content-type": [
+      "content-type", 
+      "application/xml"
+     ], 
+     "user-agent": [
+      "User-Agent", 
+      "python-requests/2.9.1"
+     ]
+    }
+   }, 
+   "hooks": [], 
+   "method": "POST", 
+   "url": "https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/batch/retrieve"
+  }, 
+  "status_code": 200, 
+  "url": "https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/batch/retrieve"
+ }, 
+ "<type 'datetime.datetime'> can't be serialized"
+]

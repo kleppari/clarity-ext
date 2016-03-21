@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<prc:process xmlns:udf="http://genologics.com/ri/userdefined" xmlns:file="http://genologics.com/ri/file" xmlns:prc="http://genologics.com/ri/process" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3637" limsid="24-3637">
+    <type uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/processtypes/355">Edvard Conc Dilution</type>
+    <technician uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/researchers/8">
+        <first-name>Edvard</first-name>
+        <last-name>Englund</last-name>
+    </technician>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A28PA1?state=3688" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A28PA1?state=3688" limsid="ENG54A28PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/92-7047?state=3898" output-generation-type="PerAllInputs" output-type="ResultFile" limsid="92-7047"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A28PA1?state=3688" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A28PA1?state=3688" limsid="ENG54A28PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7046?state=3897" output-generation-type="PerInput" output-type="Analyte" limsid="2-7046"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A27PA1?state=3687" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A27PA1?state=3687" limsid="ENG54A27PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7045?state=3896" output-generation-type="PerInput" output-type="Analyte" limsid="2-7045"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A27PA1?state=3687" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A27PA1?state=3687" limsid="ENG54A27PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/92-7047?state=3898" output-generation-type="PerAllInputs" output-type="ResultFile" limsid="92-7047"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A26PA1?state=3686" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A26PA1?state=3686" limsid="ENG54A26PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/92-7047?state=3898" output-generation-type="PerAllInputs" output-type="ResultFile" limsid="92-7047"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A26PA1?state=3686" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A26PA1?state=3686" limsid="ENG54A26PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7044?state=3895" output-generation-type="PerInput" output-type="Analyte" limsid="2-7044"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A25PA1?state=3685" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A25PA1?state=3685" limsid="ENG54A25PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/2-7043?state=3894" output-generation-type="PerInput" output-type="Analyte" limsid="2-7043"/>
+    </input-output-map>
+    <input-output-map>
+        <input post-process-uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A25PA1?state=3685" uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/ENG54A25PA1?state=3685" limsid="ENG54A25PA1"/>
+        <output uri="https://lims-staging.snpseq.medsci.uu.se/api/v2/artifacts/92-7047?state=3898" output-generation-type="PerAllInputs" output-type="ResultFile" limsid="92-7047"/>
+    </input-output-map>
+</prc:process>

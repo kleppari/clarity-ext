@@ -10,47 +10,74 @@ import logging
 # TODO: use Python 3 and add typing hints
 
 from abc import ABCMeta, abstractmethod
+import logging
 
 
 class ExtensionService:
+
+    RUN_MODE_TEST = "test"
+    RUN_MODE_FREEZE = "freeze"
+
+    def __init__(self, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
+
+    def _test_path_for_test(self, test, module, mode):
+        module_parts = module.split(".")[1:]
+        path = os.path.sep.join(module_parts)
+        return os.path.join(path, test.step, "run-" + mode)
+
     """TODO: MOVE TO extensions.py"""
-    def execute(self, module, artifacts_to_stdout=False):
+    def execute(self, module, mode, artifacts_to_stdout=False):
         """
         Given a module, finds the extension in it and runs all of its integration tests
         :param module:
+        :param mode: One of exec, test-run, freeze, validate
         :return:
         """
-        def files_to_remove(path):
-            if os.path.exists(path):
-                for item in os.listdir(path):
-                    if item != "cache.sqlite":
-                        yield os.path.join(path, item)
-
         module_obj = importlib.import_module(module)
         extension = getattr(module_obj, "Extension")
         instance = extension(None)
         integration_tests = list(instance.integration_tests())
-        if issubclass(extension, DriverFileExt):
+
+        if mode == self.RUN_MODE_TEST:
             for test in integration_tests:
-                parts = module.split(".")
-                parts = parts[1:]
-                path = os.path.sep.join(parts)
+                path = self._test_path_for_test(test, module, mode)
                 # Remove everything but the cache file
 
-                for item in files_to_remove(path):
-                    if os.path.isdir(item):
-                        shutil.rmtree(item)
-                    else:
-                        os.remove(item)
-
-                if not os.path.exists(path):
+                # We might need to clean up the directory:
+                if os.path.exists(path):
+                    to_remove = (os.path.join(path, file_or_dir)
+                                 for file_or_dir in os.listdir(path)
+                                 if file_or_dir != 'cache')
+                    for item in to_remove:
+                        if os.path.isdir(item):
+                            shutil.rmtree(item)
+                        else:
+                            os.remove(item)
+                else:
                     os.makedirs(path)
 
                 os.chdir(path)
-                driver_file_svc = DriverFileService(test.step, module, ".", test.out_file)
-                driver_file_svc.execute(artifacts_to_stdout=artifacts_to_stdout)
+
+                if issubclass(extension, DriverFileExt):
+                    driver_file_svc = DriverFileService(test.step, module, ".", test.out_file)
+                    driver_file_svc.execute(artifacts_to_stdout=True)
+                else:
+                    raise NotImplementedError("Unknown extension")
+        elif mode == self.RUN_MODE_FREEZE:
+            for test in integration_tests:
+                frozen_path = self._test_path_for_test(test, module, self.RUN_MODE_FREEZE)
+                test_path = self._test_path_for_test(test, module, self.RUN_MODE_TEST)
+                print frozen_path, "=>", test_path
+                if os.path.exists(frozen_path):
+                    self.logger.info("Removing old frozen directory '{}'".format(frozen_path))
+                    shutil.rmtree(frozen_path)
+
+                shutil.copytree(test_path, frozen_path)
         else:
-            raise NotImplementedError("Unknown extension")
+            # TODO: Execute using the step/out_file provided via the command line
+            raise NotImplementedError("coming soon")
+
 
 class DriverFileExt:
     __metaclass__ = ABCMeta
@@ -86,8 +113,6 @@ class DriverFileExt:
         # TODO: Move this code to a validation service
         # TODO: Communicate this to the LIMS rather than throwing an exception
         results = list(validation_results)
-        #warnings = [result for result in results if result.type == ValidationType.WARNING]
-        #errors = [result for result in results if result.type == ValidationType.ERROR]
         report = [repr(result) for result in results]
         if len(results) > 0:
             raise ValueError("Validation errors: ".format(os.path.sep.join(report)))

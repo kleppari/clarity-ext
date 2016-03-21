@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ver:versions xmlns:ver="http://genologics.com/ri/version">
+    <version minor="r22" major="v2" uri="https://lims-staging.snpseq.medsci.uu.se:443/api/v2"/>
+    <version minor="prerelease" major="prerelease" uri="https://lims-staging.snpseq.medsci.uu.se:443/api/prerelease"/>
+</ver:versions>
