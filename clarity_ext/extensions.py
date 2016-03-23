@@ -2,7 +2,7 @@ import importlib
 import os
 import shutil
 from clarity_ext.driverfile import DriverFileService
-import logging
+
 
 # Defines all classes that are expected to be extended. These are
 # also imported to the top-level module
@@ -26,8 +26,7 @@ class ExtensionService:
         path = os.path.sep.join(module_parts)
         return os.path.join(path, test.step, "run-" + mode)
 
-    """TODO: MOVE TO extensions.py"""
-    def execute(self, module, mode, artifacts_to_stdout=False):
+    def execute(self, module, mode):
         """
         Given a module, finds the extension in it and runs all of its integration tests
         :param module:
@@ -40,11 +39,14 @@ class ExtensionService:
         integration_tests = list(instance.integration_tests())
 
         if mode == self.RUN_MODE_TEST:
+            if len(integration_tests) == 0:
+                print "WARNING: No integration tests defined. Not able to test."
+                return
+
             for test in integration_tests:
                 path = self._test_path_for_test(test, module, mode)
-                # Remove everything but the cache file
 
-                # We might need to clean up the directory:
+                # Remove everything but the cache files
                 if os.path.exists(path):
                     to_remove = (os.path.join(path, file_or_dir)
                                  for file_or_dir in os.listdir(path)
@@ -62,6 +64,12 @@ class ExtensionService:
                 if issubclass(extension, DriverFileExt):
                     driver_file_svc = DriverFileService(test.step, module, ".", test.out_file)
                     driver_file_svc.execute(artifacts_to_stdout=True)
+                elif issubclass(extension, ResultFilesExt):
+                    # TODO: Generating the instance twice (for metadata above)
+                    from extension_context import ExtensionContext
+                    context = ExtensionContext(test.step, test.in_file)
+                    instance = extension(context)
+                    instance.generate()
                 else:
                     raise NotImplementedError("Unknown extension")
         elif mode == self.RUN_MODE_FREEZE:
@@ -79,6 +87,30 @@ class ExtensionService:
             raise NotImplementedError("coming soon")
 
 
+class BaseExtension:
+    __metaclass__ = ABCMeta
+
+    def __init__(self, context):
+        self.context = context
+        self.logger = logging.getLogger(self.__class__.__module__)
+
+
+
+class ResultFilesExt(BaseExtension):
+    """
+    Defines an extension that creates one result file for each sample
+    """
+    __metaclass__ = ABCMeta
+
+    def test(self, step, in_file):
+        """Creates a test instance suitable for this extension"""
+        return ResultFilesTest(step=step, in_file=in_file)
+
+    def generate(self):
+        """Generates the output files"""
+        pass
+
+
 class DriverFileExt:
     __metaclass__ = ABCMeta
 
@@ -91,7 +123,6 @@ class DriverFileExt:
         :return: None
         """
         self.context = context
-        # TODO: Use full namespace of the implementing extension class instead
         self.logger = logging.getLogger(self.__class__.__module__)
 
     @abstractmethod
@@ -123,4 +154,11 @@ class DriverFileTest:
     def __init__(self, step, out_file):
         self.step = step
         self.out_file = out_file
+
+
+class ResultFilesTest:
+    """Defines tests metadata for ResultFiles extensions"""
+    def __init__(self, step, in_file):
+        self.step = step
+        self.in_file = in_file
 

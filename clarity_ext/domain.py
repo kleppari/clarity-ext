@@ -60,6 +60,10 @@ class Well:
         # Zero based
         return self.row_index_dict[self.row], int(self.col) - 1
 
+# TODO: Use PlatePosition as plate key to handle different representations
+from collections import namedtuple
+class PlatePosition(namedtuple("PlatePosition", ["row", "col"])):
+    pass
 
 class Plate:
     """Encapsulates a Plate"""
@@ -67,11 +71,17 @@ class Plate:
     DOWN_FIRST = 1
     LEFT_FIRST = 2
 
-    def __init__(self):
+    def __init__(self, mapping=None):
+        """
+        :param mapping: A dictionary-like object containing mapping from well
+        position to content. It can be non-complete.
+        :return:
+        """
         self.wells = {}
-        # For simplicity, set all wells:
-        for well in self._traverse():
-            self.wells[well] = Well(well[0], well[1])
+        for row, col in self._traverse():
+            key = "{}:{}".format(row, col)
+            content = mapping[key] if key in mapping else None
+            self.wells[(row, col)] = Well(row, col, content)
 
     def _traverse(self, order=DOWN_FIRST):
         """Traverses the well in a certain order, yielding keys as (row,col) tuples"""
@@ -108,6 +118,8 @@ class Plate:
 
         self.wells[well_id].content = content
 
+    def well_key_to_tuple(self, key):
+        return key.split(":")
 
 class Dilute:
     # Enclose sample data, user input and derived variables for a

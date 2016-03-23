@@ -1,29 +1,25 @@
 import os
-from genologics.lims import Lims
-from genologics.epp import attach_file
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.entities import *
 from clarity_ext.domain import Plate, Analyte, DilutionScheme
 import importlib
 from utils import lazyprop
 import shutil
 import difflib
+from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics.lims import Lims
+from genologics.epp import attach_file
+from genologics.entities import *
+from clarity_ext.extension_context import ExtensionContext
 
 
 # The object accessible during execution of the driver file script:
 # Contains things like the current plate.
 # The underlying connection objects etc. can be accessed through "advanced"
-class DriverFileContext:
+class DriverFileContext(ExtensionContext):
     """
     Context object for DriverFile extensions
 
     Provides context objects as lazy properties.
     """
-    def __init__(self, current_step, advanced, logger=None):
-        self.current_step = current_step
-        self.advanced = advanced
-        self.logger = logger or logging.getLogger(__name__)
-
     @lazyprop
     def plate(self):
         self.logger.debug("Getting current plate (lazy property)")

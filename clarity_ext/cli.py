@@ -104,7 +104,7 @@ def extension(module, mode, stdout):
         validate: Test the code locally, then compare with the frozen directory
     """
     extension_svc = ExtensionService()
-    extension_svc.execute(module, mode, artifacts_to_stdout=stdout)
+    extension_svc.execute(module, mode)
 
 if __name__ == "__main__":
     main()
