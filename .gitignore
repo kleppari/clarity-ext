@@ -7,3 +7,5 @@ runs/
 .idea/*/
 !.idea/runConfigurations
 run-test/
+*.swp
+

@@ -4,6 +4,8 @@ from genologics.entities import *
 import requests
 import xml.etree.ElementTree as ElementTree
 import os
+from clarity_ext.utils import lazyprop
+from clarity_ext.domain import *
 
 
 class ExtensionContext:
@@ -37,6 +39,27 @@ class ExtensionContext:
                 for chunk in response.iter_content():
                     fd.write(chunk)
         return self.in_file
+
+    @lazyprop
+    def plate(self):
+        self.logger.debug("Getting current plate (lazy property)")
+        # TODO: Assumes 96 well plate only
+        self.logger.debug("Fetching plate")
+        artifacts = []
+
+        # TODO: Should we use this or .all_outputs?
+        for input, output in self.current_step.input_output_maps:
+            if output['output-generation-type'] == "PerInput":
+                artifacts.append(output['uri'])
+
+        # Batch fetch the details about these:
+        artifacts_ex = self.advanced.lims.get_batch(artifacts)
+        plate = Plate()
+        for artifact in artifacts_ex:
+            well_id = artifact.location[1]
+            plate.set_well(well_id, artifact.name, artifact.id)
+
+        return plate
 
 
 class Advanced:

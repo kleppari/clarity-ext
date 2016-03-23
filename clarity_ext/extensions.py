@@ -3,7 +3,6 @@ import os
 import shutil
 from clarity_ext.driverfile import DriverFileService
 
-
 # Defines all classes that are expected to be extended. These are
 # also imported to the top-level module
 
@@ -94,6 +93,8 @@ class BaseExtension:
         self.context = context
         self.logger = logging.getLogger(self.__class__.__module__)
 
+    def log(self, msg):
+        self.logger.info(msg)
 
 
 class ResultFilesExt(BaseExtension):

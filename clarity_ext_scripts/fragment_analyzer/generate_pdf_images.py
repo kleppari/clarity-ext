@@ -1,69 +1,33 @@
 from clarity_ext.extensions import ResultFilesExt
 from clarity_ext.domain import Plate
+from clarity_ext.pdf import PdfSplitter
+
 
 class Extension(ResultFilesExt):
     def generate(self):
-        print self.context.current_step
-        # ResultFilesExt classes have access to an "in_file"
-        # TODO: Copied the following from Clarity - use the REST client instead!
-        #       Before that, hide this in the context
+        """
+        Splits a PDF file in the following format:
+          * 10 pages skipped
+          * Samples in the order A1, B1 (DOWN_FIRST)
+        into separate pdf files
+        """
+        # The context has access to a local version of the in file (actually downloaded if needed):
+        local_file = self.context.local_in_file
 
-        # This will return the path to the in_file, but after it has been downloaded locally
-        path = self.context.local_in_file
-        # TODO: This is very slow uncached! Speed it up.
-        # Create a mapping from well to output ID:
+        page = 10  # Start on page 10 (zero indexed)
+        splitter = PdfSplitter(local_file)
 
-        # TODO: move mapping to context object
-        mapping = {}
-        for output in self.context.current_step.all_outputs():
-            if output.container:
-                mapping[output.location[1]] = output.id
-
-        #print mapping
-
-        # Now, the pdf's pages are in this format:
-        #  * 10 pages skipped
-        #  * Samples in the order A1, B1 (DOWN_FIRST)
-
-        # We can use the Plate class for helping out with this, since
-        # it knows how to enumerate wells in a certain order:
-        plate = Plate()
-        for well in plate.enumerate_wells(order=Plate.DOWN_FIRST):
-            print well
-
-        return
-
-        for each in range(len(wells)):
-            page = 10 + each                #first image is on page 10
-            well_loci = wells[each]
-            limsid = sys.argv[each + 4]
-            filename = limsid + "_" + well_loci
-            # TODO: PDF package doesn't exist
-            command = 'pdfimages ' + thePDF +' -j -f ' + str(page) + ' -l ' + str(page) + ' ' + filename
-            os.system(command)
-            longname = filename + "-000"
-            ppmname = longname + ".ppm"
-
-            # TODO: convert command doesn't exist
-            jpegname = longname + ".jpeg"
-            command2 = "convert " + ppmname + " " + jpegname
-            os.system(command2)
-
-            # TODO: Don't allow this crap!
-            command3 = "rm *ppm"            #removing ppm image so it isn't inadvertently attached
-            os.system(command3)
-
+        # Go through each well in the plate, splitting
+        for well in self.context.plate.enumerate_wells(order=Plate.DOWN_FIRST):
+            if well.artifact_id:
+                self.logger.debug("{} is on page {}".format(well, page + 1))
+                result_file_key = well.artifact_id
+                filename = "{}_{}.pdf".format(result_file_key, well.get_key().replace(":", "_"))
+                splitter.split(page, filename)
+            page += 1
 
     def integration_tests(self):
-        # TODO: If possible, query for the list in the API and reference
-        # it here with an index instead
-        # https://genologics.zendesk.com/requests/15568
+        # NOTE: It's not possible to query for the output files in order.
+        # If it was, we could return an index instead of the ID here
         yield self.test("24-3649", "92-7408")
-
-        """
-        tempwd = os.getcwd()
-        thePDF = tempwd + "/frag.pdf"           #temp PDF will be in this location
-
-        wells=[]
-        """
 
