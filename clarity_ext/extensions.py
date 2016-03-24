@@ -1,3 +1,4 @@
+from __future__ import print_function
 import importlib
 import os
 import shutil
@@ -16,73 +17,103 @@ class ExtensionService:
 
     RUN_MODE_TEST = "test"
     RUN_MODE_FREEZE = "freeze"
+    RUN_MODE_EXEC = "exec"
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
-    def _test_path_for_test(self, test, module, mode):
-        module_parts = module.split(".")[1:]
-        path = os.path.sep.join(module_parts)
-        return os.path.join(path, test.step, "run-" + mode)
+    def _run_path(self, args, module, mode):
+        if mode == self.RUN_MODE_EXEC:
+            return "."
+        else:
+            module_parts = module.split(".")[1:]
+            path = os.path.sep.join(module_parts)
+            return os.path.join(path, args["pid"], "run-" + mode)
 
-    def execute(self, module, mode):
+    def execute(self, module, mode, run_arguments_list=None):
         """
         Given a module, finds the extension in it and runs all of its integration tests
         :param module:
-        :param mode: One of exec, test-run, freeze, validate
+        :param mode: One of: exec, test, freeze, validate
+        :param run_arguments: A dictionary with arguments. If not provided, the
+            extensions integration_tests will be used. A list of dicts can be provided for
+            multiple runs.
+            A string of key value pairs can also be sent.
         :return:
         """
+        if isinstance(run_arguments_list, str) or isinstance(run_arguments_list, unicode):
+            arguments = run_arguments_list.split(" ")
+            key_values = (argument.split("=") for argument in arguments)
+            run_arguments_list = {key: value for key, value in key_values}
+
         module_obj = importlib.import_module(module)
         extension = getattr(module_obj, "Extension")
         instance = extension(None)
-        integration_tests = list(instance.integration_tests())
 
-        if mode == self.RUN_MODE_TEST:
-            if len(integration_tests) == 0:
-                print "WARNING: No integration tests defined. Not able to test."
+        if not run_arguments_list and mode == self.RUN_MODE_TEST:
+            run_arguments_list = [test.__dict__ if type(test) is not dict else test
+                             for test in instance.integration_tests()]
+            if len(run_arguments_list) == 0:
+                print("WARNING: No integration tests defined. Not able to test.")
                 return
+        elif type(run_arguments_list) is not list:
+            run_arguments_list = [run_arguments_list]
 
-            for test in integration_tests:
-                path = self._test_path_for_test(test, module, mode)
+        if mode in [self.RUN_MODE_TEST, self.RUN_MODE_EXEC]:
+            for run_arguments in run_arguments_list:
+                path = self._run_path(run_arguments, module, mode)
 
-                # Remove everything but the cache files
-                if os.path.exists(path):
-                    to_remove = (os.path.join(path, file_or_dir)
-                                 for file_or_dir in os.listdir(path)
-                                 if file_or_dir != 'cache')
-                    for item in to_remove:
-                        if os.path.isdir(item):
-                            shutil.rmtree(item)
-                        else:
-                            os.remove(item)
-                else:
-                    os.makedirs(path)
+                if mode == self.RUN_MODE_TEST:
+                    print("Test: clarity-ext --cache cache extension --pid {} --shared-file {} {} {}".format(
+                        run_arguments["pid"],
+                        run_arguments["shared_file"],
+                        module, self.RUN_MODE_TEST))
+                    print("Exec: clarity-ext extension --pid {} --shared-file {} {} {}".format(
+                        "{processLuid}", "{compoundOutputFileLuids3}",
+                        module, self.RUN_MODE_EXEC))
 
-                os.chdir(path)
+                    # Remove everything but the cache files
+                    if os.path.exists(path):
+                        to_remove = (os.path.join(path, file_or_dir)
+                                     for file_or_dir in os.listdir(path)
+                                     if file_or_dir != 'cache')
+                        for item in to_remove:
+                            if os.path.isdir(item):
+                                shutil.rmtree(item)
+                            else:
+                                os.remove(item)
+                    else:
+                        os.makedirs(path)
+
+                    os.chdir(path)
+
+                print("Executing at {}".format(path))
 
                 if issubclass(extension, DriverFileExt):
-                    driver_file_svc = DriverFileService(test.step, module, ".", test.out_file)
+                    driver_file_svc = DriverFileService(
+                        run_arguments["pid"], module, ".", run_arguments["shared_file"])
                     driver_file_svc.execute(artifacts_to_stdout=True)
                 elif issubclass(extension, ResultFilesExt):
                     # TODO: Generating the instance twice (for metadata above)
                     from extension_context import ExtensionContext
-                    context = ExtensionContext(test.step, test.in_file)
+                    context = ExtensionContext(run_arguments["pid"],
+                                               run_arguments["shared_file"])
                     instance = extension(context)
                     instance.generate()
                 else:
                     raise NotImplementedError("Unknown extension")
         elif mode == self.RUN_MODE_FREEZE:
-            for test in integration_tests:
+            for test in run_arguments_list:
                 frozen_path = self._test_path_for_test(test, module, self.RUN_MODE_FREEZE)
                 test_path = self._test_path_for_test(test, module, self.RUN_MODE_TEST)
-                print frozen_path, "=>", test_path
+                print(frozen_path, "=>", test_path)
                 if os.path.exists(frozen_path):
                     self.logger.info("Removing old frozen directory '{}'".format(frozen_path))
                     shutil.rmtree(frozen_path)
 
                 shutil.copytree(test_path, frozen_path)
         else:
-            # TODO: Execute using the step/out_file provided via the command line
+            # TODO: Execute using the pid/shared_file provided via the command line
             raise NotImplementedError("coming soon")
 
 
@@ -103,9 +134,9 @@ class ResultFilesExt(BaseExtension):
     """
     __metaclass__ = ABCMeta
 
-    def test(self, step, in_file):
+    def test(self, pid, shared_file):
         """Creates a test instance suitable for this extension"""
-        return ResultFilesTest(step=step, in_file=in_file)
+        return ResultFilesTest(pid=pid, shared_file=shared_file)
 
     def generate(self):
         """Generates the output files"""
@@ -152,14 +183,14 @@ class DriverFileExt:
 
 class DriverFileTest:
     """Represents data needed to test a driver file against a running LIMS server"""
-    def __init__(self, step, out_file):
-        self.step = step
-        self.out_file = out_file
+    def __init__(self, pid, shared_file):
+        self.pid = pid
+        self.shared_file = shared_file
 
 
 class ResultFilesTest:
     """Defines tests metadata for ResultFiles extensions"""
-    def __init__(self, step, in_file):
-        self.step = step
-        self.in_file = in_file
+    def __init__(self, pid, shared_file):
+        self.pid = pid
+        self.shared_file = shared_file
 

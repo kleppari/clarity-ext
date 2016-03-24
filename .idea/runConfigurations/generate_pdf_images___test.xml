@@ -16,7 +16,7 @@
     <module name="extensions" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/clarity_ext/cli.py" />
-    <option name="PARAMETERS" value="--level DEBUG --cache cache extension clarity_ext_scripts.fragment_analyzer.generate_pdf_images test" />
+    <option name="PARAMETERS" value="--cache cache extension clarity_ext_scripts.fragment_analyzer.generate_pdf_images test" />
     <option name="SHOW_COMMAND_LINE" value="true" />
     <method />
   </configuration>

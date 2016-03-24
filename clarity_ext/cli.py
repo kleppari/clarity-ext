@@ -1,3 +1,4 @@
+from __future__ import print_function
 import click
 import logging
 from clarity_ext.utils import use_requests_cache
@@ -28,7 +29,7 @@ def integration_config(config):
     """Parses and prints out the configuration"""
     raise NotImplementedError("Working on convention stuff")
     integration_svc = IntegrationTestService()
-    print integration_svc.report_config(config)
+    print(integration_svc.report_config(config))
 
 
 @main.command("config-pycharm")
@@ -53,8 +54,8 @@ def integration_run(module, force):
     """
     integration_svc = IntegrationTestService()
     integration_svc.run(module, force)
-    print "Done running tests. Freeze them for future use with `clarity-ext integration-freeze {}`".format(
-        module)
+    print("Done running tests. Freeze them for future use with `clarity-ext integration-freeze {}`".format(
+        module))
 
 
 @main.command("integration-freeze")
@@ -93,8 +94,8 @@ def integration_validate(config):
 @main.command()
 @click.argument("module")
 @click.argument("mode")
-@click.option("--stdout/--no-stdout", default=False)
-def extension(module, mode, stdout):
+@click.option("--args")
+def extension(module, mode, args):
     """Loads the extension and executes the integration tests.
 
     :param mode: One of
@@ -104,7 +105,7 @@ def extension(module, mode, stdout):
         validate: Test the code locally, then compare with the frozen directory
     """
     extension_svc = ExtensionService()
-    extension_svc.execute(module, mode)
+    extension_svc.execute(module, mode, args)
 
 if __name__ == "__main__":
     main()

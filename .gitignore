@@ -8,4 +8,5 @@ runs/
 !.idea/runConfigurations
 run-test/
 *.swp
+int_tests/
 

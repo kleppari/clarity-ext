@@ -12,7 +12,7 @@ class ExtensionContext:
     """
     Defines context objects for extensions.
     """
-    def __init__(self, current_step, in_file, logger=None):
+    def __init__(self, current_step, shared_file, logger=None):
         # TODO: Add the lims property to "advanced" so that it won't be accessed accidentally?
         # TODO: These don't need to be provided in most cases
         lims = Lims(BASEURI, USERNAME, PASSWORD)
@@ -21,24 +21,25 @@ class ExtensionContext:
         self.advanced = Advanced(lims)
         self.current_step = Process(lims, id=current_step)
         self.logger = logger or logging.getLogger(__name__)
-        self.in_file = in_file
+        self.shared_file = shared_file
 
     @property
-    def local_in_file(self):
+    def local_shared_file(self):
         # Does nothing if the file is here
 
-        if not os.path.exists(self.in_file):
-            response = self.advanced.get("artifacts/{}".format(self.in_file))
+        if not os.path.exists(self.shared_file):
+            print self.shared_file
+            response = self.advanced.get("artifacts/{}".format(self.shared_file))
             xml = response.text
             root = ElementTree.fromstring(xml)
             files = [child.get('limsid')
                      for child in root if child.tag == "{http://genologics.com/ri/file}file"]
             assert len(files) == 1
             response = self.advanced.get("files/{}/download".format(files[0]))
-            with open(self.in_file, 'wb') as fd:
+            with open(self.shared_file, 'wb') as fd:
                 for chunk in response.iter_content():
                     fd.write(chunk)
-        return self.in_file
+        return self.shared_file
 
     @lazyprop
     def plate(self):

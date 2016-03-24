@@ -12,10 +12,10 @@ class Extension(ResultFilesExt):
         into separate pdf files
         """
         # The context has access to a local version of the in file (actually downloaded if needed):
-        local_file = self.context.local_in_file
+        shared_file = self.context.local_shared_file
 
         page = 10  # Start on page 10 (zero indexed)
-        splitter = PdfSplitter(local_file)
+        splitter = PdfSplitter(shared_file)
 
         # Go through each well in the plate, splitting
         for well in self.context.plate.enumerate_wells(order=Plate.DOWN_FIRST):
