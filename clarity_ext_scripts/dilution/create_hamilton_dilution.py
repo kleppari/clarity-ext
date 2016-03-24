@@ -22,10 +22,10 @@ class Extension(DriverFileExt):
             row = [dilute.sample_name,
                    "WellPosSource",
                    "PlatePosSource",
-                   "{:.2f}".format(dilute.sample_volume),
-                   "{:.2f}".format(dilute.buffer_volume),
-                   "WellPosTarget",
-                   "PlatePosTarget"]
+                   "{:.1f}".format(dilute.sample_volume),
+                   "{:.1f}".format(dilute.buffer_volume),
+                   "{}".format(dilute.target_well_index),
+                   dilute.target_container]
             yield "\t".join(row)
 
     def filename(self):
@@ -33,5 +33,6 @@ class Extension(DriverFileExt):
 
     def integration_tests(self):
         # The step used during design/last iteration of this extension:
-        yield DriverFileTest(step="24-3637", out_file="92-7047")
+        yield DriverFileTest(step="24-3643", out_file="92-7103")
+        # yield DriverFileTest(step="24-3637", out_file="92-7047")
 

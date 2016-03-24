@@ -42,7 +42,9 @@ class DriverFileContext:
     def dilution_scheme(self):
         # TODO: Might want to have this on a property called dilution
         return DilutionScheme(self.input_analytes,
-                              self.output_analytes)
+                              self.output_analytes,
+                              "Hamilton",
+                              8)
 
     @lazyprop
     def input_analytes(self):

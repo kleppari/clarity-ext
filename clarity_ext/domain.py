@@ -127,10 +127,16 @@ class Dilute:
         self.has_to_evaporate = None
 
 
+
 class DilutionScheme:
     """Creates a dilution scheme, given input and output analytes."""
 
-    def __init__(self, input_analytes, output_analytes):
+    def __init__(
+            self, input_analytes, output_analytes,
+            robot_name, plate_size_y):
+        index_method_map = {"Hamilton": self._calculate_well_index_hamilton}
+        indexer = index_method_map[robot_name]
+
         self.dilutes = []
         for in_analyte, out_analyte in zip(input_analytes, output_analytes):
             self.dilutes.append(Dilute(in_analyte, out_analyte))
@@ -141,6 +147,8 @@ class DilutionScheme:
                 dilute.source_concentration
             dilute.buffer_volume = \
                 max(dilute.target_volume - dilute.sample_volume, 0)
+            dilute.target_well_index = indexer(
+                dilute.target_well, plate_size_y)
             dilute.has_to_evaporate = \
                 (dilute.target_volume - dilute.sample_volume) < 0
 
@@ -157,6 +165,12 @@ class DilutionScheme:
 
         if any(dilute.has_to_evaporate for dilute in self.dilutes):
             yield ValidationException("Sample has to be evaporated", ValidationType.WARNING)
+
+    @staticmethod
+    def _calculate_well_index_hamilton(well, plate_size_y):
+        (y, x) = well.get_coordinates()
+        return x * plate_size_y + y + 1
+
 
 
 class ValidationType:
