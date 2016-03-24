@@ -26,9 +26,9 @@ class ExtensionContext:
     @property
     def local_shared_file(self):
         # Does nothing if the file is here
+        # TODO: If caching, this should be cached too.
 
         if not os.path.exists(self.shared_file):
-            print self.shared_file
             response = self.advanced.get("artifacts/{}".format(self.shared_file))
             xml = response.text
             root = ElementTree.fromstring(xml)
@@ -62,6 +62,15 @@ class ExtensionContext:
 
         return plate
 
+    def cleanup(self):
+        """Cleans up any downloaded resources. This method will be automatically
+        called by the framework and does not need to be called by extensions"""
+        # Clean up:
+        if self.local_shared_file is not None and os.path.exists(self.local_shared_file):
+            self.logger.info("The local_shared_file was downloaded. Remove it to ensure "
+                             "that it won't be uploaded again")
+            # TODO: Handle exception
+            os.remove(self.local_shared_file)
 
 class Advanced:
     """Provides advanced features, should be avoided in extension scripts"""

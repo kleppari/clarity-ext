@@ -12,17 +12,14 @@ class Extension(ResultFilesExt):
         into separate pdf files
         """
         # The context has access to a local version of the in file (actually downloaded if needed):
-        shared_file = self.context.local_shared_file
-
         page = 10  # Start on page 10 (zero indexed)
-        splitter = PdfSplitter(shared_file)
+        splitter = PdfSplitter(self.context.local_shared_file)
 
         # Go through each well in the plate, splitting
         for well in self.context.plate.enumerate_wells(order=Plate.DOWN_FIRST):
             if well.artifact_id:
                 self.logger.debug("{} is on page {}".format(well, page + 1))
-                result_file_key = well.artifact_id
-                filename = "{}_{}.pdf".format(result_file_key, well.get_key().replace(":", "_"))
+                filename = "{}_{}.pdf".format(well.artifact_id, well.get_key().replace(":", "_"))
                 splitter.split(page, filename)
             page += 1
 

@@ -64,12 +64,15 @@ class ExtensionService:
                 path = self._run_path(run_arguments, module, mode)
 
                 if mode == self.RUN_MODE_TEST:
-                    print("Test: clarity-ext --cache cache extension --pid {} --shared-file {} {} {}".format(
-                        run_arguments["pid"],
-                        run_arguments["shared_file"],
+                    print("Rerun with:")
+                    run_arguments_str = " ".join(
+                        ["=".join(tuple) for tuple in run_arguments.iteritems()])
+                    print("  Test: clarity-ext --cache cache extension --args '{}' {} {}".format(
+                        run_arguments_str,
                         module, self.RUN_MODE_TEST))
-                    print("Exec: clarity-ext extension --pid {} --shared-file {} {} {}".format(
-                        "{processLuid}", "{compoundOutputFileLuids3}",
+                    # TODO: Get the index from the test
+                    print("  Exec: clarity-ext extension --args '{}' {} {}".format(
+                        "pid={processLuid} shared_file={compoundOutputFileLuids3}",
                         module, self.RUN_MODE_EXEC))
 
                     # Remove everything but the cache files
@@ -100,6 +103,8 @@ class ExtensionService:
                                                run_arguments["shared_file"])
                     instance = extension(context)
                     instance.generate()
+
+                    context.cleanup()
                 else:
                     raise NotImplementedError("Unknown extension")
         elif mode == self.RUN_MODE_FREEZE:
