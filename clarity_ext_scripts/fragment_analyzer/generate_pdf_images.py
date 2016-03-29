@@ -6,14 +6,13 @@ from clarity_ext.pdf import PdfSplitter
 class Extension(ResultFilesExt):
     def generate(self):
         """
-        Splits a PDF file in the following format:
+        Splits a PDF file into one PDF per sample according to this spec:
           * 10 pages skipped
-          * Samples in the order A1, B1 (DOWN_FIRST)
-        into separate pdf files
+          * Samples in the order A1, B1 (DOWN_FIRST), one sample per page
         """
         # The context has access to a local version of the in file (actually downloaded if needed):
         page = 10  # Start on page 10 (zero indexed)
-        splitter = PdfSplitter(self.context.local_shared_file)
+        splitter = PdfSplitter(self.context.local_shared_file("Fragment Analyzer PDF File"))
 
         # Go through each well in the plate, splitting
         for well in self.context.plate.enumerate_wells(order=Plate.DOWN_FIRST):
@@ -24,7 +23,5 @@ class Extension(ResultFilesExt):
             page += 1
 
     def integration_tests(self):
-        # NOTE: It's not possible to query for the output files in order.
-        # If it was, we could return an index instead of the ID here
-        yield self.test("24-3649", "92-7408")
+        yield self.test("24-3649")
 

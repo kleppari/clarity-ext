@@ -99,8 +99,7 @@ class ExtensionService:
                 elif issubclass(extension, ResultFilesExt):
                     # TODO: Generating the instance twice (for metadata above)
                     from extension_context import ExtensionContext
-                    context = ExtensionContext(run_arguments["pid"],
-                                               run_arguments["shared_file"])
+                    context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
                     instance.generate()
 
@@ -139,9 +138,9 @@ class ResultFilesExt(BaseExtension):
     """
     __metaclass__ = ABCMeta
 
-    def test(self, pid, shared_file):
+    def test(self, pid):
         """Creates a test instance suitable for this extension"""
-        return ResultFilesTest(pid=pid, shared_file=shared_file)
+        return ResultFilesTest(pid=pid)
 
     def generate(self):
         """Generates the output files"""
@@ -195,7 +194,6 @@ class DriverFileTest:
 
 class ResultFilesTest:
     """Defines tests metadata for ResultFiles extensions"""
-    def __init__(self, pid, shared_file):
+    def __init__(self, pid):
         self.pid = pid
-        self.shared_file = shared_file
 
