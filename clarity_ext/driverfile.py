@@ -3,7 +3,8 @@ from genologics.lims import Lims
 from genologics.epp import attach_file
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import *
-from clarity_ext.domain import Plate, Analyte, DilutionScheme
+from clarity_ext.domain import Plate, Analyte
+from clarity_ext.dilution import DilutionScheme
 import importlib
 from utils import lazyprop
 import shutil
