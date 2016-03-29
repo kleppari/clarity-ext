@@ -1,5 +1,5 @@
 
-class Analyte():
+class Analyte:
     """
     Describes an Analyte in the Clarity LIMS system, including custom UDFs.
 

@@ -49,11 +49,33 @@ class DriverFileContext:
 
     @lazyprop
     def input_analytes(self):
-        input_uris = []
-        for input_uri, _ in self.current_step.input_output_maps:
-            if input_uri:
-                input_uris.append(input_uri["uri"])
-        resources = self.advanced.lims.get_batch(input_uris)
+        # Get an unique set of input analytes
+        # The rest client have a proper call for this (all_inputs) but it
+        # renders a run time error
+        input_artifacts = []
+        for input_artifact, _ in self.current_step.input_output_maps:
+            if input_artifact:
+                input_artifacts.append(input_artifact["uri"])
+
+        # unique_inputs = dict([(ia.uri, ia) for ia in input_artifacts])
+        # sorted_tuples = sorted(unique_inputs.items(), reverse=True)
+        # input_uris = [tuple[1] for tuple in sorted_tuples]
+
+        # input_uris = list(set(input_uris))
+        # input_uris = list(set([artifact.uri for artifact in input_artifacts]))
+
+        unique_inputs = dict([(ia.uri, ia) for ia in input_artifacts])
+        tmp = [(ia.uri, ia) for ia in input_artifacts]
+        unique_inputs = dict(tmp)
+
+        # tmp = [tuple[1] for tuple in unique_inputs.items()]
+
+        input_uris = [tuple[1] for tuple in tmp]
+        # input_uris = [tuple[0] for tuple in unique_inputs.items()]
+        input_uris = unique_inputs.values()
+
+        self.logger.debug("input uris, {}".format(input_artifacts))
+        resources = self.advanced.lims.get_batch(input_artifacts)
         return [Analyte(resource) for resource in resources]
 
     @lazyprop
@@ -62,6 +84,8 @@ class DriverFileContext:
         # TODO: Doesn't there exist anything for this in the genologics package?
         # TODO: I believe that the rest client already caches input_output_maps in-process,
         #       if not, put that into a lazyprop too
+        # The rest client have the proper calls for this (analytes), but
+        # it renders a run-time error.
         output_uris = []
         for _, output_uri in self.current_step.input_output_maps:
             if output_uri and output_uri["output-type"] == "Analyte":

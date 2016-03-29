@@ -1,5 +1,6 @@
 from domain import *
 
+
 class Dilute:
     # Enclose sample data, user input and derived variables for a
     # single row in a dilution
@@ -10,12 +11,16 @@ class Dilute:
         # TODO: Ensure that the domain object sets these to None if not available
         # TODO: Add the following condition to the validation stuff:
         # if self.target_concentration is None or self.target_volume is None:
+        self.source_well = input_analyte.well
+        self.source_container = input_analyte.container
         self.target_well = output_analyte.well
         self.target_container = output_analyte.container
         self.sample_name = output_analyte.name
         self.source_concentration = input_analyte.concentration
         self.sample_volume = None
         self.buffer_volume = None
+        self.source_well_index = None
+        self.source_plate_pos = None
         self.target_well_index = None
         self.target_plate_pos = None
         self.has_to_evaporate = None
@@ -59,13 +64,12 @@ class DilutionScheme:
             self, input_analytes, output_analytes,
             robot_name, plate_size_y):
 
-        self.dilutes = []
-        for in_analyte, out_analyte in zip(input_analytes, output_analytes):
-            self.dilutes.append(Dilute(in_analyte, out_analyte))
-
+        self.dilutes = self.init_dilutes(input_analytes, output_analytes)
         robot_deck_positioner = RobotDeckPositioner(robot_name, self.dilutes)
 
         for dilute in self.dilutes:
+            dilute.source_well_index = robot_deck_positioner.indexer(
+                dilute.source_well, plate_size_y)
             dilute.sample_volume = \
                 dilute.target_concentration * dilute.target_volume / \
                 dilute.source_concentration
@@ -92,3 +96,10 @@ class DilutionScheme:
 
         if any(dilute.has_to_evaporate for dilute in self.dilutes):
             yield ValidationException("Sample has to be evaporated", ValidationType.WARNING)
+
+    @staticmethod
+    def init_dilutes(input_analytes, output_analytes):
+        dilutes = []
+        for in_analyte, out_analyte in zip(input_analytes, output_analytes):
+            dilutes.append(Dilute(in_analyte, out_analyte))
+        return dilutes

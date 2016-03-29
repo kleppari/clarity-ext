@@ -25,7 +25,6 @@ class ExtensionService:
                 for item in os.listdir(path):
                     if item != "cache.sqlite":
                         yield os.path.join(path, item)
-
         module_obj = importlib.import_module(module)
         extension = getattr(module_obj, "Extension")
         instance = extension(None)
