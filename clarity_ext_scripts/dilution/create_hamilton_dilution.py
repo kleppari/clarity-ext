@@ -25,7 +25,7 @@ class Extension(DriverFileExt):
                    "{:.1f}".format(dilute.sample_volume),
                    "{:.1f}".format(dilute.buffer_volume),
                    "{}".format(dilute.target_well_index),
-                   dilute.target_container]
+                   dilute.target_plate_pos]
             yield "\t".join(row)
 
     def filename(self):
