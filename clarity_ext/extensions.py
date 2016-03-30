@@ -30,6 +30,14 @@ class ExtensionService:
             path = os.path.sep.join(module_parts)
             return os.path.join(path, args["pid"], "run-" + mode)
 
+    def _parse_run_argument(self, in_argument):
+        if isinstance(in_argument, str):
+            return {"pid": in_argument}
+        elif isinstance(in_argument, dict):
+            return in_argument
+        else:
+            return in_argument.__dict__
+
     def execute(self, module, mode, run_arguments_list=None):
         """
         Given a module, finds the extension in it and runs all of its integration tests
@@ -51,8 +59,7 @@ class ExtensionService:
         instance = extension(None)
 
         if not run_arguments_list and mode == self.RUN_MODE_TEST:
-            run_arguments_list = [test.__dict__ if type(test) is not dict else test
-                             for test in instance.integration_tests()]
+            run_arguments_list = map(self._parse_run_argument, instance.integration_tests())
             if len(run_arguments_list) == 0:
                 print("WARNING: No integration tests defined. Not able to test.")
                 return
@@ -92,13 +99,14 @@ class ExtensionService:
 
                 print("Executing at {}".format(path))
 
+                from extension_context import ExtensionContext
                 if issubclass(extension, DriverFileExt):
-                    driver_file_svc = DriverFileService(
-                        run_arguments["pid"], module, ".", run_arguments["shared_file"])
+                    context = ExtensionContext(run_arguments["pid"])
+                    instance = extension(context)
+                    driver_file_svc = DriverFileService(instance, ".")
                     driver_file_svc.execute(artifacts_to_stdout=True)
                 elif issubclass(extension, ResultFilesExt):
                     # TODO: Generating the instance twice (for metadata above)
-                    from extension_context import ExtensionContext
                     context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
                     instance.generate()
@@ -176,6 +184,11 @@ class DriverFileExt:
         """Returns `DriverFileTest`s that should be run to validate the code"""
         pass
 
+    @abstractmethod
+    def shared_file(self):
+        """Returns the name of the shared file that should include the newly generated file"""
+        return "Sample List"
+
     def handle_validation(self, validation_results):
         # TODO: Move this code to a validation service
         # TODO: Communicate this to the LIMS rather than throwing an exception
@@ -183,6 +196,11 @@ class DriverFileExt:
         report = [repr(result) for result in results]
         if len(results) > 0:
             raise ValueError("Validation errors: ".format(os.path.sep.join(report)))
+
+
+class ExtensionTest:
+    def __init__(self, pid):
+        self.pid = pid
 
 
 class DriverFileTest:

@@ -28,10 +28,14 @@ class Extension(DriverFileExt):
                    "PlatePosTarget"]
             yield "\t".join(row)
 
+
     def filename(self):
         return "dilution"  # TODO
 
+    def shared_file(self):
+        return "DriverFile_EEX_160317_24-3637"
+
     def integration_tests(self):
         # The step used during design/last iteration of this extension:
-        yield DriverFileTest(step="24-3637", out_file="92-7047")
+        yield "24-3637"
 

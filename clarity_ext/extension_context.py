@@ -2,7 +2,6 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
 from genologics.entities import *
 import requests
-import xml.etree.ElementTree as ElementTree
 import os
 from clarity_ext.utils import lazyprop
 from clarity_ext.domain import *
@@ -68,6 +67,47 @@ class ExtensionContext:
 
         return local_path
 
+    @lazyprop
+    def plate2(self):
+        self.logger.debug("Getting current plate (lazy property)")
+        # TODO: Assumes 96 well plate only
+        plate = Plate()
+        for input, output in self.current_step.input_output_maps:
+            if output['output-generation-type'] == "PerInput":
+                # Process
+                artifact = output['uri']
+                location = artifact.location
+                well = location[1]
+                plate.set_well(well, artifact.name)
+        return plate
+
+    @lazyprop
+    def input_analytes(self):
+        input_uris = []
+        for input_uri, _ in self.current_step.input_output_maps:
+            if input_uri:
+                input_uris.append(input_uri["uri"])
+        resources = self.advanced.lims.get_batch(input_uris)
+        return [Analyte(resource) for resource in resources]
+
+    @lazyprop
+    def output_analytes(self):
+        # TODO: Could be more DRY
+        # TODO: Doesn't there exist anything for this in the genologics package?
+        # TODO: I believe that the rest client already caches input_output_maps in-process,
+        #       if not, put that into a lazyprop too
+        output_uris = []
+        for _, output_uri in self.current_step.input_output_maps:
+            if output_uri and output_uri["output-type"] == "Analyte":
+                output_uris.append(output_uri["uri"])
+        resources = self.advanced.lims.get_batch(output_uris)
+        return [Analyte(resource) for resource in resources]
+
+    @lazyprop
+    def dilution_scheme(self):
+        # TODO: Might want to have this on a property called dilution
+        return DilutionScheme(self.input_analytes,
+                              self.output_analytes)
 
     @lazyprop
     def shared_files(self):
@@ -81,18 +121,8 @@ class ExtensionContext:
             if output['output-generation-type'] == "PerAllInputs":
                 unique.setdefault(output["uri"].id, output["uri"])
 
-
-        #print unique.values()
         artifacts = self.advanced.lims.get_batch(unique.values())
         return artifacts
-
-
-    @property
-    def local_shared_file2(self):
-        raise NotImplementedError()
-        # TODO: Refactor to using named shared files (dictionary like)
-        # Does nothing if the file is here
-        # TODO: If caching, this should be cached too.
 
     @lazyprop
     def plate(self):

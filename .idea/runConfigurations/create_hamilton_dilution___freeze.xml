@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="create_hamilton_dilution - test" type="PythonConfigurationType" factoryName="Python" folderName="create_hamilton_diltuion">
+  <configuration default="false" name="create_hamilton_dilution - freeze" type="PythonConfigurationType" factoryName="Python" folderName="create_hamilton_diltuion">
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
@@ -16,7 +16,7 @@
     <module name="extensions" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/clarity_ext/cli.py" />
-    <option name="PARAMETERS" value="--level debug --cache cache extension clarity_ext_scripts.dilution.create_hamilton_dilution test" />
+    <option name="PARAMETERS" value="--cache cache extension clarity_ext_scripts.dilution.create_hamilton_dilution freeze" />
     <option name="SHOW_COMMAND_LINE" value="true" />
     <method />
   </configuration>
