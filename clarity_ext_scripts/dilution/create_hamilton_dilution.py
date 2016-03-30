@@ -29,7 +29,7 @@ class Extension(DriverFileExt):
             yield "\t".join(row)
 
     def filename(self):
-        return "dilution"  # TODO
+        return "dilution.txt"  # TODO
 
     def shared_file(self):
         return "DriverFile_EEX_160317_24-3637"
