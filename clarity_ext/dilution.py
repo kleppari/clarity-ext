@@ -31,34 +31,58 @@ class RobotDeckPositioner:
     Handle plate positions on the robot deck (target and source)
     as well as well indexing
      """
-    def __init__(self, robot_name, dilutes):
+    def __init__(self, robot_name, dilutes, plate_size_x, plate_size_y):
+        self.plate_size_x = plate_size_x
+        self.plate_size_y = plate_size_y
         index_method_map = {"Hamilton": self._calculate_well_index_hamilton}
         self.indexer = index_method_map[robot_name]
+        self.target_plate_sorting_map = self._build_plate_sorting_map(
+            [dilute.target_container for dilute in dilutes])
         self.target_plate_position_map = self._build_plate_position_map(
-            [dilute.target_container for dilute in dilutes],
-            "END"
+            self.target_plate_sorting_map, "END"
         )
+        self.source_plate_sorting_map = self._build_plate_sorting_map(
+            [dilute.source_container for dilute in dilutes])
         self.source_plate_position_map = self._build_plate_position_map(
-            [dilute.source_container for dilute in dilutes],
-            "DNA"
+            self.source_plate_sorting_map, "DNA"
         )
 
-    @staticmethod
-    def _calculate_well_index_hamilton(well, plate_size_y):
+    def find_sort_number(self, dilute):
+        """Sort dilutes according to plate and well positions in source
+        :param dilute:
+        """
+        plate_base_number = self.plate_size_y * self.plate_size_x + 1
+        plate_sorting = self.source_plate_sorting_map[
+            dilute.source_container.id]
+        well_index = self.indexer(dilute.source_well)
+        return plate_sorting * plate_base_number + well_index
+
+    def _calculate_well_index_hamilton(self, well):
         (y, x) = well.get_coordinates()
-        return x * plate_size_y + y + 1
+        return x * self.plate_size_y + y + 1
 
     @staticmethod
-    def _build_plate_position_map(containers, plate_pos_prefix):
+    def _build_plate_position_map(plate_sorting_map, plate_pos_prefix):
         # Fetch an unique list of container names from input
         # Make a dictionary with container names and plate positions
+        # eg. END1, DNA2
+        plate_positions = []
+        for key, value in plate_sorting_map.iteritems():
+            plate_position = "{}{}".format(plate_pos_prefix, value)
+            plate_positions.append((key, plate_position))
+
+        plate_positions = dict(plate_positions)
+        return plate_positions
+
+    @staticmethod
+    def _build_plate_sorting_map(containers):
+        # Fetch an unique list of container names from input
+        # Make a dictionary with container names and plate position sort numbers
         unique_containers = sorted(list(
             {container.id for container in containers}))
         positions = range(1, len(unique_containers) + 1)
-        target_plate_positions = \
-            ["{}{}".format(plate_pos_prefix, pos) for pos in positions]
-        plate_positions = dict(zip(unique_containers, target_plate_positions))
-        return plate_positions
+        plate_position_numbers = dict(zip(unique_containers, positions))
+        return plate_position_numbers
 
 
 class DilutionScheme:
@@ -66,14 +90,15 @@ class DilutionScheme:
 
     def __init__(
             self, input_analytes, output_analytes,
-            robot_name, plate_size_y):
+            robot_name, plate_size_x, plate_size_y):
 
-        self.dilutes = self.init_dilutes(input_analytes, output_analytes)
-        robot_deck_positioner = RobotDeckPositioner(robot_name, self.dilutes)
+        self.dilutes = self._init_dilutes(input_analytes, output_analytes)
+        robot_deck_positioner = RobotDeckPositioner(
+            robot_name, self.dilutes, plate_size_x, plate_size_y)
 
         for dilute in self.dilutes:
             dilute.source_well_index = robot_deck_positioner.indexer(
-                dilute.source_well, plate_size_y)
+                dilute.source_well)
             dilute.source_plate_pos = robot_deck_positioner.\
                 source_plate_position_map[dilute.source_container.id]
             dilute.sample_volume = \
@@ -82,12 +107,24 @@ class DilutionScheme:
             dilute.buffer_volume = \
                 max(dilute.target_volume - dilute.sample_volume, 0)
             dilute.target_well_index = robot_deck_positioner.indexer(
-                dilute.target_well, plate_size_y)
+                dilute.target_well)
             dilute.target_plate_pos = robot_deck_positioner\
                 .target_plate_position_map[
                     dilute.target_container.id]
             dilute.has_to_evaporate = \
                 (dilute.target_volume - dilute.sample_volume) < 0
+
+        self._sort_dilutes(robot_deck_positioner)
+
+    def _sort_dilutes(self, robot_deck_positioner):
+        new_sorting = []
+        for dilute in self.dilutes:
+            sort_number = robot_deck_positioner.find_sort_number(dilute)
+            new_sorting.append((sort_number, dilute))
+
+        new_sorting = sorted(new_sorting)
+        (_, dilutes) = zip(*new_sorting)
+        self.dilutes = list(dilutes)
 
     def validate(self):
         """Yields validation errors or warnings"""
@@ -104,7 +141,7 @@ class DilutionScheme:
             yield ValidationException("Sample has to be evaporated", ValidationType.WARNING)
 
     @staticmethod
-    def init_dilutes(input_analytes, output_analytes):
+    def _init_dilutes(input_analytes, output_analytes):
         dilutes = []
         for in_analyte, out_analyte in zip(input_analytes, output_analytes):
             dilutes.append(Dilute(in_analyte, out_analyte))

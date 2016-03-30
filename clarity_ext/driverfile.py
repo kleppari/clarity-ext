@@ -49,11 +49,12 @@ class DriverFileContext:
         return DilutionScheme(input_analytes,
                               output_analytes,
                               "Hamilton",
-                              8)
+                              12, 8)
 
     @lazyprop
     def input_analytes(self):
         # Get an unique set of input analytes
+        # Trust the fact that all inputs are analytes, always true?
         resources = self.current_step.all_inputs(unique=True, resolve=True)
         return [Analyte(resource) for resource in resources]
 

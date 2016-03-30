@@ -108,5 +108,22 @@ class HamiltonTests(unittest.TestCase):
                          "Source plate position is not right, sample = {}, contents = {}\n{}"
                          .format(SAMPLE2, contents, self.hamilton_reader.dict_matrix))
 
+    def test_ordering1(self):
+        contents = self.hamilton_reader.matrix[0][self.column_ref.sample]
+        self.assertEqual(contents, SAMPLE1)
+
+    def test_ordering2(self):
+        contents = self.hamilton_reader.matrix[1][self.column_ref.sample]
+        self.assertEqual(contents, SAMPLE2)
+
+    def test_ordering3(self):
+        contents = self.hamilton_reader.matrix[2][self.column_ref.sample]
+        self.assertEqual(contents, SAMPLE3)
+
+    def test_ordering4(self):
+        contents = self.hamilton_reader.matrix[3][self.column_ref.sample]
+        self.assertEqual(contents, SAMPLE4)
+
+
 if __name__ == "__main__":
     unittest.main()
