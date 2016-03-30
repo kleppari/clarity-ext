@@ -104,7 +104,8 @@ class ExtensionService:
                     context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
                     driver_file_svc = DriverFileService(instance, ".")
-                    driver_file_svc.execute(artifacts_to_stdout=True)
+                    commit = mode == self.RUN_MODE_EXEC
+                    driver_file_svc.execute(commit=commit, artifacts_to_stdout=True)
                 elif issubclass(extension, ResultFilesExt):
                     # TODO: Generating the instance twice (for metadata above)
                     context = ExtensionContext(run_arguments["pid"])
