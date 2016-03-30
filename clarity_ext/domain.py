@@ -1,5 +1,5 @@
 
-class Analyte():
+class Analyte:
     """
     Describes an Analyte in the Clarity LIMS system, including custom UDFs.
 
@@ -38,6 +38,10 @@ class Analyte():
     @property
     def container(self):
         return self.resource.location[0]
+
+    @property
+    def sample(self):
+        return self.resource.samples[0]
 
 
 class Well:

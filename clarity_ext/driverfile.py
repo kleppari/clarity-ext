@@ -9,6 +9,7 @@ import importlib
 from utils import lazyprop
 import shutil
 import difflib
+import itertools
 
 
 # The object accessible during execution of the driver file script:
@@ -42,32 +43,38 @@ class DriverFileContext:
     @lazyprop
     def dilution_scheme(self):
         # TODO: Might want to have this on a property called dilution
-        return DilutionScheme(self.input_analytes,
-                              self.output_analytes,
+        input_analytes, output_analytes = self._match_analytes(
+            self.input_analytes, self.output_analytes
+        )
+        return DilutionScheme(input_analytes,
+                              output_analytes,
                               "Hamilton",
                               8)
 
     @lazyprop
     def input_analytes(self):
-        input_uris = []
-        for input_uri, _ in self.current_step.input_output_maps:
-            if input_uri:
-                input_uris.append(input_uri["uri"])
-        resources = self.advanced.lims.get_batch(input_uris)
+        # Get an unique set of input analytes
+        resources = self.current_step.all_inputs(unique=True, resolve=True)
         return [Analyte(resource) for resource in resources]
 
     @lazyprop
     def output_analytes(self):
-        # TODO: Could be more DRY
-        # TODO: Doesn't there exist anything for this in the genologics package?
-        # TODO: I believe that the rest client already caches input_output_maps in-process,
-        #       if not, put that into a lazyprop too
-        output_uris = []
-        for _, output_uri in self.current_step.input_output_maps:
-            if output_uri and output_uri["output-type"] == "Analyte":
-                output_uris.append(output_uri["uri"])
-        resources = self.advanced.lims.get_batch(output_uris)
+        (analytes, info) = self.current_step.analytes()
+        if not info == 'Output':
+            raise ValueError("No output analytes for this step!")
+        resources = self.advanced.lims.get_batch(analytes)
         return [Analyte(resource) for resource in resources]
+
+    @staticmethod
+    def _match_analytes(input_analytes, output_analytes):
+        """ Input and output analytes do not come in order from get_batch,
+            sort them so that they match with respect to sample ids"""
+        input_dict = dict([(input_.sample.id, input_)
+                           for input_ in input_analytes])
+        matched_analytes = [(input_dict[output_.sample.id], output_)
+                            for output_ in output_analytes]
+        input_analytes, output_analytes = zip(*matched_analytes)
+        return list(input_analytes), list(output_analytes)
 
 
 class DriverFileService:

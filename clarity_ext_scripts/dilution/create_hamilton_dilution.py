@@ -20,8 +20,8 @@ class Extension(DriverFileExt):
 
         for dilute in self.context.dilution_scheme.dilutes:
             row = [dilute.sample_name,
-                   "WellPosSource",
-                   "PlatePosSource",
+                   "{}".format(dilute.source_well_index),
+                   dilute.source_plate_pos,
                    "{:.1f}".format(dilute.sample_volume),
                    "{:.1f}".format(dilute.buffer_volume),
                    "{}".format(dilute.target_well_index),
