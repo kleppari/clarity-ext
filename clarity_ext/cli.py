@@ -17,7 +17,7 @@ def main(level, cache):
                 This is used to ensure reproducible and fast integration tests
     :return:
     """
-    logging.basicConfig(level=level)
+    logging.basicConfig(level=level.upper())
     # TODO: Add a file based implementation for requests-cache, so we can
     # code review it (and filter) and check the cached values into the same repo.
     if cache:
