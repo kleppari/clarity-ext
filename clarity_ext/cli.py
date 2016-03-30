@@ -3,7 +3,6 @@ import click
 import logging
 from clarity_ext.utils import use_requests_cache
 from clarity_ext.integration import IntegrationTestService
-from clarity_ext.driverfile import DriverFileService
 from clarity_ext.extensions import ExtensionService
 
 

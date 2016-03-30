@@ -28,7 +28,6 @@ class Extension(DriverFileExt):
                    "PlatePosTarget"]
             yield "\t".join(row)
 
-
     def filename(self):
         return "dilution"  # TODO
 

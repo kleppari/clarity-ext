@@ -79,7 +79,7 @@ class ExtensionService:
                         module, self.RUN_MODE_TEST))
                     # TODO: Get the index from the test
                     print("  Exec: clarity-ext extension --args '{}' {} {}".format(
-                        "pid={processLuid} shared_file={compoundOutputFileLuids3}",
+                        "pid={processLuid}",
                         module, self.RUN_MODE_EXEC))
 
                     # Remove everything but the cache files

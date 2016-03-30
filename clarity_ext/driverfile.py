@@ -65,7 +65,7 @@ class DriverFileService:
             shutil.copyfile(local_file, new_file_path)
 
         if artifacts_to_stdout:
-            print "--- {} => {}".format(local_file, artifact.id)
+            print "--- {} => {} ({})".format(local_file, artifact.name, artifact.id)
             with open(local_file, 'r') as f:
                 print f.read()
             print "---"
