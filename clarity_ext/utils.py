@@ -12,9 +12,5 @@ def lazyprop(fn):
 
 
 def use_requests_cache(cache):
-    # We need to inject our
-    if "file" not in requests_cache.backends.registry:
-        requests_cache.backends.registry['file'] = RequestsFileCache
-
-    requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'), backend="file")
+    requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'))
 
