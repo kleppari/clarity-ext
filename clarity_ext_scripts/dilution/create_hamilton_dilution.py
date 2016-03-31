@@ -1,4 +1,4 @@
-# Calculates dclarity-ext extension --args 'pid={processLuid} shared_file={compoundOutputFileLuid3}' clarity_ext_scripts.fragment_analyzer.generate_pdf_images execilute volumes, volume from sample and volume from buffer
+# Calculates dilute volumes, volume from sample and volume from buffer
 # for each analyte within a given process.
 # User provide target concentration and target volume for each analyte.
 # Give error if any volume is less than 2 ul

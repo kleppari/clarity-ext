@@ -18,6 +18,7 @@ class ExtensionService:
     RUN_MODE_TEST = "test"
     RUN_MODE_FREEZE = "freeze"
     RUN_MODE_EXEC = "exec"
+    CACHE_NAME = "http_cache"
 
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -49,6 +50,11 @@ class ExtensionService:
             A string of key value pairs can also be sent.
         :return:
         """
+        from clarity_ext.utils import use_requests_cache
+        if mode == self.RUN_MODE_TEST:
+            self.logger.info("Using cache {}".format(self.CACHE_NAME))
+            use_requests_cache(self.CACHE_NAME)
+
         if isinstance(run_arguments_list, str) or isinstance(run_arguments_list, unicode):
             arguments = run_arguments_list.split(" ")
             key_values = (argument.split("=") for argument in arguments)
@@ -86,7 +92,7 @@ class ExtensionService:
                     if os.path.exists(path):
                         to_remove = (os.path.join(path, file_or_dir)
                                      for file_or_dir in os.listdir(path)
-                                     if file_or_dir != 'cache')
+                                     if file_or_dir != 'http_cache.sqlite')
                         for item in to_remove:
                             if os.path.isdir(item):
                                 shutil.rmtree(item)

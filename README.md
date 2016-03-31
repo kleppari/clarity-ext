@@ -60,7 +60,9 @@ Currently, there are two extension base classes:
   * `DriverFileExtension`: Provides methods that are called to generate the file
   
 All extensions have access to the `ExtensionContext`. This object provides a higher level view on the data available
-from the LIMS's REST API. The extension can also import generic helper classes.
+from the LIMS's REST API. The extension can also import generic helper classes. All of the properties on this
+object are generated lazily (on request), and an exception is thrown if they can't be used in the particular context
+for some reason.
 
 All extensions in the clarity_ext_scripts folder follow the design principle of leaving all non-trivial or boilerplate
 code to the framework. The idea is that they can be understood by non-developers configuring or validating the system.

@@ -1,15 +1,13 @@
 from __future__ import print_function
 import click
 import logging
-from clarity_ext.utils import use_requests_cache
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.extensions import ExtensionService
 
 
 @click.group()
 @click.option("--level", default="WARN")
-@click.option("--cache")
-def main(level, cache):
+def main(level):
     """
     :param level: ["DEBUG", "INFO", "WARN", "ERROR"]
     :param cache: Set to a cache name if running from a cache (or caching)
@@ -17,10 +15,6 @@ def main(level, cache):
     :return:
     """
     logging.basicConfig(level=level.upper())
-    # TODO: Remove this parameter and rather cache when running the extension command in test mode, perhaps providing
-    # an override
-    if cache:
-        use_requests_cache(cache)
 
 @main.command("integration-config")
 @click.argument("config")
