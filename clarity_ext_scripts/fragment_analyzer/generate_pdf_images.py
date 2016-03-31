@@ -1,10 +1,10 @@
-from clarity_ext.extensions import ResultFilesExt
+from clarity_ext.extensions import GeneralExtension
 from clarity_ext.domain import Plate
 from clarity_ext.pdf import PdfSplitter
 
 
-class Extension(ResultFilesExt):
-    def generate(self):
+class Extension(GeneralExtension):
+    def execute(self):
         """
         Splits a PDF file into one PDF per sample according to this spec:
           * 10 pages skipped

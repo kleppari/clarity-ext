@@ -1,4 +1,4 @@
-from clarity_ext.extensions import DriverFileExt, ExtensionTest
+from clarity_ext.extensions import DriverFileExt
 import datetime
 
 

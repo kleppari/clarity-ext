@@ -17,8 +17,8 @@ def main(level, cache):
     :return:
     """
     logging.basicConfig(level=level.upper())
-    # TODO: Add a file based implementation for requests-cache, so we can
-    # code review it (and filter) and check the cached values into the same repo.
+    # TODO: Remove this parameter and rather cache when running the extension command in test mode, perhaps providing
+    # an override
     if cache:
         use_requests_cache(cache)
 

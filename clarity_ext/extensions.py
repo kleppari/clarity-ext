@@ -100,18 +100,17 @@ class ExtensionService:
                 print("Executing at {}".format(path))
 
                 from extension_context import ExtensionContext
-                if issubclass(extension, DriverFileExt):
+                if issubclass(extension, DriverFileExtension):
                     context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
                     driver_file_svc = DriverFileService(instance, ".")
                     commit = mode == self.RUN_MODE_EXEC
                     driver_file_svc.execute(commit=commit, artifacts_to_stdout=True)
-                elif issubclass(extension, ResultFilesExt):
+                elif issubclass(extension, GeneralExtension):
                     # TODO: Generating the instance twice (for metadata above)
                     context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
-                    instance.generate()
-
+                    instance.execute()
                     context.cleanup()
                 else:
                     raise NotImplementedError("Unknown extension")
@@ -130,7 +129,10 @@ class ExtensionService:
             raise NotImplementedError("coming soon")
 
 
-class BaseExtension:
+class GeneralExtension:
+    """
+    An extension that must implement the `execute` method
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, context):
@@ -140,23 +142,19 @@ class BaseExtension:
     def log(self, msg):
         self.logger.info(msg)
 
+    @abstractmethod
+    def execute(self):
+        pass
 
-class ResultFilesExt(BaseExtension):
-    """
-    Defines an extension that creates one result file for each sample
-    """
-    __metaclass__ = ABCMeta
+    def integration_tests(self):
+        return []
 
     def test(self, pid):
         """Creates a test instance suitable for this extension"""
         return ResultFilesTest(pid=pid)
 
-    def generate(self):
-        """Generates the output files"""
-        pass
 
-
-class DriverFileExt:
+class DriverFileExtension:
     __metaclass__ = ABCMeta
 
     def __init__(self, context):

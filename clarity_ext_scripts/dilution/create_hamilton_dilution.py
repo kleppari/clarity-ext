@@ -4,10 +4,10 @@
 # Give error if any volume is less than 2 ul
 # Give error if any volume exceeds 51 ul
 
-from clarity_ext.extensions import DriverFileExt, DriverFileTest
+from clarity_ext.extensions import DriverFileExtension
 
 
-class Extension(DriverFileExt):
+class Extension(DriverFileExtension):
     """Calculates dilute volumes and export to dilute driver file"""
 
     def content(self):
