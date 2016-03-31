@@ -13,13 +13,61 @@ shell commands that can be run on certain events in the system.
 To develop and validate these steps, the developer would need to change the configuration entry for the
 script in the LIMS and then run the script manually through the LIMS.
 
+This method is cumbersome and doesn't provide an acceptable feedback loop for the developer.
+
 ## Solution
-With this tool, the developer can instead:
+With `clarity-ext`, the developer can instead:
   * Set a step up as required
   * Write an extension that should run in this step
   * Run (integration test) the extension from his development environment
   * All requests/responses are cached, so the integration test will run fast. Furthermore, the test
     can still be executed after the step has been deleted or altered. 
-  * Extensions have access to extension context, which do most of the work. This way, the readability 
-    and simplicity of the extensions increases, allowing non-developers to review and alter the code.
+  * Extensions have access to extension contexts, which do most of the work. This way, the readability 
+    and simplicity of the extensions increase, allowing non-developers to review and alter the code.
+
+## Components
+### Runner
+The first component of the system is the `clarity-ext` command line tool. All extensions are run through this tool.
+
+For example, we have an extension that generates an input file for a Fragment Analyzer.
+The `Process Type`s  EPP is set up like this in that case:
+```
+clarity-ext extension --args 'pid={processLuid}' clarity_ext_scripts.fragment_analyzer.create_fa_input_file exec
+```
+
+However, when developing, developer runs this instead:
+```
+clarity-ext extension --cache cache extension clarity_ext_scripts.fragment_analyzer.create_fa_input_file test
+```
+
+These are the differences between the commands:
+  * The latter one uses a cache for requests/responses
+  * It uses "test" instead of "exec", which means it should run against the predefined test data
+  * The first one needs to provide the pid as an argument, while the second uses the test data defined in the extension
+
+The end result is that the user will get feedback directly in the IDE or terminal when running. Faster because of
+caching, but the tool will also output the file to stdout.
+
+### Extensions
+The clarity_ext_scripts module includes extensions that have been implemented for the SNP&SEQ technology platform at
+Uppsala University. Some might be directly applied in another lab, but they are generally there as a sample.
+
+The developer creates an extension by subclassing one of the extension base classes and implementing or overriding
+one or more method.
+
+Currently, there are two extension base classes:
+  * `GeneralExtension`: The extensions's `execute` method will be run on execution
+  * `DriverFileExtension`: Provides methods that are called to generate the file
+  
+All extensions have access to the `ExtensionContext`. This object provides a higher level view on the data available
+from the LIMS's REST API. The extension can also import generic helper classes.
+
+All extensions in the clarity_ext_scripts folder follow the design principle of leaving all non-trivial or boilerplate
+code to the framework. The idea is that they can be understood by non-developers configuring or validating the system.
+Furthermore, the idea is that all custom made scripts are made only with this framework.
+
+### Helper modules
+* clarity_ext.domain: Provides classes that help with work directly related to labs, such as a Plate object that
+  can enumerate wells in different ways.
+* clarity_ext.pdf: Provides ways to work with pdf files in a high level way, such as splitting them
 
