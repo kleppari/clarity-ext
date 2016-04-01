@@ -3,7 +3,8 @@ from PyPDF2 import PdfFileReader, PdfFileWriter
 
 class PdfSplitter:
     def __init__(self, path):
-        self._input_pdf = PdfFileReader(open(path), "rb")
+        self._stream = open(path, "rb")
+        self._input_pdf = PdfFileReader(self._stream)
 
     def split(self, pages, filename):
         """
@@ -23,4 +24,7 @@ class PdfSplitter:
 
         with open(filename, "wb") as output_stream:
             output_writer.write(output_stream)
+
+    def close(self):
+        self._stream.close()
 

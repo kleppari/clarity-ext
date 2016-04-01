@@ -22,6 +22,9 @@ class Extension(GeneralExtension):
                 splitter.split(page, filename)
             page += 1
 
+        # TODO: Make this implicit
+        splitter.close()
+
     def integration_tests(self):
         yield self.test("24-3649")
 
