@@ -80,7 +80,7 @@ class ExtensionService:
                     print("Rerun with:")
                     run_arguments_str = " ".join(
                         ["=".join(tuple) for tuple in run_arguments.iteritems()])
-                    print("  Test: clarity-ext --cache cache extension --args '{}' {} {}".format(
+                    print("  Test: clarity-ext extension --args '{}' {} {}".format(
                         run_arguments_str,
                         module, self.RUN_MODE_TEST))
                     # TODO: Get the index from the test
