@@ -46,14 +46,15 @@ class Analyte:
 
 class Well:
     """Encapsulates a well in a plate"""
-    def __init__(self, row, col, content=None):
+    def __init__(self, row, col, artifact_name=None, artifact_id=None):
         self.row = row
         self.col = col
-        self.content = content
+        self.artifact_name = artifact_name
         self.row_index_dict = dict(
             [(row_str, row_ind)
              for row_str, row_ind
              in zip("ABCDEFGH", range(0, 7))])
+        self.artifact_id = artifact_id
 
     def get_key(self):
         return "{}:{}".format(self.row, self.col)
@@ -62,31 +63,44 @@ class Well:
         return "{}:{}".format(self.row, self.col)
 
     def __str__(self):
-        return "{} => {}".format(self.get_key(), self.content)
+        return "{} name={}, id={}".format(self.get_key().ljust(5, ' '), self.artifact_name,
+                                          self.artifact_id)
 
     def get_coordinates(self):
         # Zero based
         return self.row_index_dict[self.row], int(self.col) - 1
 
 
+# TODO: Use PlatePosition as plate key to handle different representations
+from collections import namedtuple
+class PlatePosition(namedtuple("PlatePosition", ["row", "col"])):
+    pass
+
 class Plate:
     """Encapsulates a Plate"""
 
     DOWN_FIRST = 1
-    LEFT_FIRST = 2
+    RIGHT_FIRST = 2
 
-    def __init__(self):
+    def __init__(self, mapping=None):
+        """
+        :param mapping: A dictionary-like object containing mapping from well
+        position to content. It can be non-complete.
+        :return:
+        """
         self.wells = {}
-        # For simplicity, set all wells:
-        for well in self._traverse():
-            self.wells[well] = Well(well[0], well[1])
+        for row, col in self._traverse():
+            key = "{}:{}".format(row, col)
+            content = mapping[key] if mapping and key in mapping else None
+            self.wells[(row, col)] = Well(row, col, content)
 
     def _traverse(self, order=DOWN_FIRST):
         """Traverses the well in a certain order, yielding keys as (row,col) tuples"""
 
         # TODO: Provide support for other formats
         # TODO: Make use of functional prog. - and remove dup.
-        if order == self.DOWN_FIRST:
+        # TODO: NOTE! RIGHT_FIRST/DOWN_FIRST where switched. Fix all scripts before checking in.
+        if order == self.RIGHT_FIRST:
             for row in "ABCDEFGH":
                 for col in range(1, 13):
                     yield (row, col)
@@ -103,7 +117,7 @@ class Plate:
     def list_wells(self, order=DOWN_FIRST):
         return list(self.enumerate_wells(order))
 
-    def set_well(self, well_id, content):
+    def set_well(self, well_id, artifact_name, artifact_id=None):
         """
         well_id should be a string in the format 'B:1'
         """
@@ -114,8 +128,12 @@ class Plate:
         if well_id not in self.wells:
             raise KeyError("Well id {} is not available in this plate".format(well_id))
 
-        self.wells[well_id].content = content
+        # TODO: Change the parameter to accepting a Well class instead
+        self.wells[well_id].artifact_name = artifact_name
+        self.wells[well_id].artifact_id = artifact_id
 
+    def well_key_to_tuple(self, key):
+        return key.split(":")
 
 class ValidationType:
     ERROR = 1

@@ -6,3 +6,8 @@ runs/
 .idea/*
 .idea/*/
 !.idea/runConfigurations
+run-test/
+*.swp
+int_tests/
+.virtualenv
+

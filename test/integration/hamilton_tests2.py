@@ -6,14 +6,11 @@ import unittest
 from clarity_ext.utility.hamilton_driver_file_reader import HamiltonReader as FileReader
 from clarity_ext.utility.hamilton_driver_file_reader import HamiltonColumnReference as ColumnRef
 from clarity_ext_scripts.dilution.create_hamilton_dilution import Extension
-from clarity_ext.driverfile import DriverFileContext
-from genologics.lims import Lims
-from genologics.epp import attach_file
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.entities import *
+from clarity_ext.extension_context import ExtensionContext
 from clarity_ext.utils import use_requests_cache
 
 TEST_PROCESS_URI = "https://lims-staging.snpseq.medsci.uu.se/api/v2/processes/24-3643"
+TEST_PROCESS_ID = "24-3643"
 SAMPLE1 = "EdvardProv60"
 SAMPLE2 = "EdvardProv61"
 SAMPLE3 = "EdvardProv62"
@@ -24,10 +21,8 @@ class HamiltonTests(unittest.TestCase):
 
     def setUp(self):
         use_requests_cache("cache")
-        self.lims = Lims(BASEURI, USERNAME, PASSWORD)
-        self.lims.check_version()
-        process = Process(self.lims, TEST_PROCESS_URI)
-        context = DriverFileContext(process, advanced=self)
+        context = ExtensionContext(TEST_PROCESS_ID)
+        # noinspection PyTypeChecker
         extension = Extension(context)
         driver_file_contents = "\n".join([row_ for row_ in extension.content()])
         self.hamilton_reader = FileReader(driver_file_contents)

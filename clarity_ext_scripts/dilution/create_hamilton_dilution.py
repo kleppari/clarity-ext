@@ -4,10 +4,11 @@
 # Give error if any volume is less than 2 ul
 # Give error if any volume exceeds 51 ul
 
-from clarity_ext.extensions import DriverFileExt, DriverFileTest
+from clarity_ext.extensions import DriverFileExtension
+from clarity_ext.extensions import DriverFileTest
 
 
-class Extension(DriverFileExt):
+class Extension(DriverFileExtension):
     """Calculates dilute volumes and export to dilute driver file"""
 
     def content(self):
@@ -29,10 +30,12 @@ class Extension(DriverFileExt):
             yield "\t".join(row)
 
     def filename(self):
-        return "dilution"  # TODO
+        return "dilution.txt"
+
+    def shared_file(self):
+        return "DriverFile_EEX_160317_24-3643"
 
     def integration_tests(self):
         # The step used during design/last iteration of this extension:
-        yield DriverFileTest(step="24-3643", out_file="92-7103")
-        # yield DriverFileTest(step="24-3637", out_file="92-7047")
+        yield "24-3643"
 

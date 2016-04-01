@@ -1,28 +1,20 @@
+from __future__ import print_function
 import click
 import logging
-import requests_cache
-from clarity_ext.utils import use_requests_cache
 from clarity_ext.integration import IntegrationTestService
-from clarity_ext.driverfile import DriverFileService
 from clarity_ext.extensions import ExtensionService
-from utils import RequestsFileCache
 
 
 @click.group()
 @click.option("--level", default="WARN")
-@click.option("--cache")
-def main(level, cache):
+def main(level):
     """
     :param level: ["DEBUG", "INFO", "WARN", "ERROR"]
     :param cache: Set to a cache name if running from a cache (or caching)
                 This is used to ensure reproducible and fast integration tests
     :return:
     """
-    logging.basicConfig(level=level)
-    # TODO: Add a file based implementation for requests-cache, so we can
-    # code review it (and filter) and check the cached values into the same repo.
-    if cache:
-        use_requests_cache(cache)
+    logging.basicConfig(level=level.upper())
 
 @main.command("integration-config")
 @click.argument("config")
@@ -30,7 +22,7 @@ def integration_config(config):
     """Parses and prints out the configuration"""
     raise NotImplementedError("Working on convention stuff")
     integration_svc = IntegrationTestService()
-    print integration_svc.report_config(config)
+    print(integration_svc.report_config(config))
 
 
 @main.command("config-pycharm")
@@ -55,8 +47,8 @@ def integration_run(module, force):
     """
     integration_svc = IntegrationTestService()
     integration_svc.run(module, force)
-    print "Done running tests. Freeze them for future use with `clarity-ext integration-freeze {}`".format(
-        module)
+    print("Done running tests. Freeze them for future use with `clarity-ext integration-freeze {}`".format(
+        module))
 
 
 @main.command("integration-freeze")
@@ -93,37 +85,20 @@ def integration_validate(config):
 
 
 @main.command()
-@click.argument("pid")
-@click.argument("limsfile")
-@click.argument("script")
-@click.option("--commit/--no-commit", default=False)
-@click.option("--path", default=".")
-def driverfile(pid, limsfile, script, commit, path):
-    """
-    Generates a file based on the pid (current step id) and a python script.
-
-    The script will be executed inside a sandbox that has already set up.
-
-    It has access to the following (may be lazily materialized):
-    TODO: Document the context
-
-    When hooked up to the LIMS, always set commit to True. When testing locally
-    it should not be set.
-    """
-    click.echo('Generating driver file: pid={}, script={}, commit={}, limsfile={}'
-               .format(pid, script, commit, limsfile))
-    svc = DriverFileService(pid, script, path, limsfile)
-    svc.execute(commit)
-
-
-@main.command()
 @click.argument("module")
-@click.option("--stdout/--no-stdout", default=False)
-def extension(module, stdout):
-    """Loads the extension and executes the integration tests."""
+@click.argument("mode")
+@click.option("--args")
+def extension(module, mode, args):
+    """Loads the extension and executes the integration tests.
+
+    :param mode: One of
+        exec: Execute the code in normal mode
+        test: Test the code locally
+        freeze: Freeze an already created test (move from test-run to test-frozen)
+        validate: Test the code locally, then compare with the frozen directory
+    """
     extension_svc = ExtensionService()
-    print stdout
-    extension_svc.execute(module, artifacts_to_stdout=stdout)
+    extension_svc.execute(module, mode, args)
 
 if __name__ == "__main__":
     main()
