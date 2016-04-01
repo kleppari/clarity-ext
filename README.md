@@ -17,7 +17,7 @@ This method is cumbersome and doesn't provide an acceptable feedback loop for th
 
 ## Solution
 With `clarity-ext`, the developer can instead:
-  * Set a step up as required
+  * Set a step up as usual
   * Write an extension that should run in this step
   * Run (integration test) the extension from his development environment
   * All requests/responses are cached, so the integration test will run fast. Furthermore, the test
@@ -37,39 +37,37 @@ clarity-ext extension --args 'pid={processLuid}' clarity_ext_scripts.fragment_an
 
 However, when developing, developer runs this instead:
 ```
-clarity-ext extension --cache cache extension clarity_ext_scripts.fragment_analyzer.create_fa_input_file test
+clarity-ext extension clarity_ext_scripts.fragment_analyzer.create_fa_input_file test
 ```
 
 These are the differences between the commands:
   * The latter one uses a cache for requests/responses
-  * It uses "test" instead of "exec", which means it should run against the predefined test data
   * The first one needs to provide the pid as an argument, while the second uses the test data defined in the extension
 
-The end result is that the user will get feedback directly in the IDE or terminal when running. Faster because of
+The end result is that the user will get feedback directly in the IDE or terminal when running. It's faster because of
 caching, but the tool will also output the file to stdout.
 
 ### Extensions
 The clarity_ext_scripts module includes extensions that have been implemented for the SNP&SEQ technology platform at
-Uppsala University. Some might be directly applied in another lab, but they are generally there as a sample.
+Uppsala University. Some might be directly applied in another lab, but they are generally there as samples only.
 
 The developer creates an extension by subclassing one of the extension base classes and implementing or overriding
 one or more method.
 
 Currently, there are two extension base classes:
   * `GeneralExtension`: The extensions's `execute` method will be run on execution
-  * `DriverFileExtension`: Provides methods that are called to generate the file
-  
+  * `DriverFileExtension`: Provides methods that describe the file
+
 All extensions have access to the `ExtensionContext`. This object provides a higher level view on the data available
-from the LIMS's REST API. The extension can also import generic helper classes. All of the properties on this
+from the Clarity REST API. The extension can also import generic helper classes. All of the properties on this
 object are generated lazily (on request), and an exception is thrown if they can't be used in the particular context
 for some reason.
 
 All extensions in the clarity_ext_scripts folder follow the design principle of leaving all non-trivial or boilerplate
 code to the framework. The idea is that they can be understood by non-developers configuring or validating the system.
-Furthermore, the idea is that all custom made scripts are made only with this framework.
+Furthermore, the idea is that all new extensions are made only with this framework.
 
 ### Helper modules
 * clarity_ext.domain: Provides classes that help with work directly related to labs, such as a Plate object that
   can enumerate wells in different ways.
 * clarity_ext.pdf: Provides ways to work with pdf files in a high level way, such as splitting them
-
