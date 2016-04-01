@@ -34,7 +34,7 @@ class RobotDeckPositioner:
     def __init__(self, robot_name, dilutes, plate_size_x, plate_size_y):
         self.plate_size_x = plate_size_x
         self.plate_size_y = plate_size_y
-        index_method_map = {"Hamilton": self._calculate_well_index_hamilton}
+        index_method_map = {"Hamilton": self._calculate_well_index_down_first}
         self.indexer = index_method_map[robot_name]
         self.target_plate_sorting_map = self._build_plate_sorting_map(
             [dilute.target_container for dilute in dilutes])
@@ -54,10 +54,12 @@ class RobotDeckPositioner:
         plate_base_number = self.plate_size_y * self.plate_size_x + 1
         plate_sorting = self.source_plate_sorting_map[
             dilute.source_container.id]
-        well_index = self.indexer(dilute.source_well)
+        # Sort order for wells are always based on down first indexing
+        # regardless the robot type
+        well_index = self._calculate_well_index_down_first(dilute.source_well)
         return plate_sorting * plate_base_number + well_index
 
-    def _calculate_well_index_hamilton(self, well):
+    def _calculate_well_index_down_first(self, well):
         (y, x) = well.get_coordinates()
         return x * self.plate_size_y + y + 1
 
@@ -91,6 +93,7 @@ class DilutionScheme:
     def __init__(
             self, input_analytes, output_analytes,
             robot_name, plate_size_x, plate_size_y):
+        """Calculates all derived values needed in dilute driver file """
 
         self.dilutes = self._init_dilutes(input_analytes, output_analytes)
         robot_deck_positioner = RobotDeckPositioner(
