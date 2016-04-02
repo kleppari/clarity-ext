@@ -8,7 +8,7 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
 from genologics.epp import attach_file
 from genologics.entities import *
-from clarity_ext.extension_context import ExtensionContext
+from clarity_ext.context import ExtensionContext
 
 
 class DriverFileService:

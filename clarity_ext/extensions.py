@@ -3,6 +3,8 @@ import importlib
 import os
 import shutil
 from clarity_ext.driverfile import DriverFileService
+from context import ExtensionContext
+from clarity_ext.utils import use_requests_cache
 
 # Defines all classes that are expected to be extended. These are
 # also imported to the top-level module
@@ -23,7 +25,7 @@ class ExtensionService:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
-    def _run_path(self, args, module, mode):
+    def _run_path(self, args, module, mode, config):
         if mode == self.RUN_MODE_EXEC:
             return "."
         else:
@@ -39,7 +41,7 @@ class ExtensionService:
         else:
             return in_argument.__dict__
 
-    def execute(self, module, mode, run_arguments_list=None):
+    def execute(self, module, mode, run_arguments_list=None, config=None):
         """
         Given a module, finds the extension in it and runs all of its integration tests
         :param module:
@@ -50,7 +52,6 @@ class ExtensionService:
             A string of key value pairs can also be sent.
         :return:
         """
-        from clarity_ext.utils import use_requests_cache
         if mode == self.RUN_MODE_TEST:
             self.logger.info("Using cache {}".format(self.CACHE_NAME))
             use_requests_cache(self.CACHE_NAME)
@@ -64,7 +65,7 @@ class ExtensionService:
         extension = getattr(module_obj, "Extension")
         instance = extension(None)
 
-        if not run_arguments_list and mode == self.RUN_MODE_TEST:
+        if not run_arguments_list and (mode == self.RUN_MODE_TEST or mode == self.RUN_MODE_FREEZE):
             run_arguments_list = map(self._parse_run_argument, instance.integration_tests())
             if len(run_arguments_list) == 0:
                 print("WARNING: No integration tests defined. Not able to test.")
@@ -73,21 +74,19 @@ class ExtensionService:
             run_arguments_list = [run_arguments_list]
 
         if mode in [self.RUN_MODE_TEST, self.RUN_MODE_EXEC]:
+            if mode == self.RUN_MODE_TEST:
+                print("To execute from Clarity:")
+                print("  clarity-ext extension --args '{}' {} {}".format(
+                    "pid={processLuid}",
+                    module, self.RUN_MODE_EXEC))
+                print("To freeze the latest test run (set as reference data for future runs)")
+                print("  clarity-ext extension {} {}".format(
+                    module, self.RUN_MODE_FREEZE))
+
             for run_arguments in run_arguments_list:
-                path = self._run_path(run_arguments, module, mode)
+                path = self._run_path(run_arguments, module, mode, config)
 
                 if mode == self.RUN_MODE_TEST:
-                    print("Rerun with:")
-                    run_arguments_str = " ".join(
-                        ["=".join(tuple) for tuple in run_arguments.iteritems()])
-                    print("  Test: clarity-ext extension --args '{}' {} {}".format(
-                        run_arguments_str,
-                        module, self.RUN_MODE_TEST))
-                    # TODO: Get the index from the test
-                    print("  Exec: clarity-ext extension --args '{}' {} {}".format(
-                        "pid={processLuid}",
-                        module, self.RUN_MODE_EXEC))
-
                     # Remove everything but the cache files
                     if os.path.exists(path):
                         to_remove = (os.path.join(path, file_or_dir)
@@ -105,7 +104,6 @@ class ExtensionService:
 
                 print("Executing at {}".format(path))
 
-                from extension_context import ExtensionContext
                 if issubclass(extension, DriverFileExtension):
                     context = ExtensionContext(run_arguments["pid"])
                     instance = extension(context)
@@ -121,17 +119,22 @@ class ExtensionService:
                 else:
                     raise NotImplementedError("Unknown extension")
         elif mode == self.RUN_MODE_FREEZE:
-            for test in run_arguments_list:
-                frozen_path = self._test_path_for_test(test, module, self.RUN_MODE_FREEZE)
+            frozen_root_path = config.get("frozen_root_path", ".")
+            print("Freezing data (requests, responses and result files/hashes) to {}"
+                  .format(frozen_root_path))
+
+            for run_arguments in run_arguments_list:
+                test_path = self._run_path(run_arguments, module, self.RUN_MODE_TEST)
+                #frozen_path = self._test_path_for_test(test, module, self.RUN_MODE_FREEZE)
+                print(test_path)
+                continue
                 test_path = self._test_path_for_test(test, module, self.RUN_MODE_TEST)
                 print(frozen_path, "=>", test_path)
                 if os.path.exists(frozen_path):
                     self.logger.info("Removing old frozen directory '{}'".format(frozen_path))
                     shutil.rmtree(frozen_path)
-
                 shutil.copytree(test_path, frozen_path)
         else:
-            # TODO: Execute using the pid/shared_file provided via the command line
             raise NotImplementedError("coming soon")
 
 
