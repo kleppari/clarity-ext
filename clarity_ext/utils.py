@@ -10,6 +10,29 @@ def lazyprop(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
+# Monkey patch the sqlite cache in requests_cache so that it
+default_dbdict_set_item = requests_cache.backends.storage.dbdict.DbPickleDict.__setitem__
+default_dbdict_get_item = requests_cache.backends.storage.dbdict.DbPickleDict.__getitem__
+AUTH_HEADER = 'Authorization'
+
+def dbdict_set_item(self, key, item):
+    store = item[0]
+    if AUTH_HEADER in store.request.headers:
+        store.request.headers[AUTH_HEADER] = '***'
+    default_dbdict_set_item(self, key, item)
+
+
+def dbdict_get_item(self, key):
+    item = default_dbdict_get_item(self, key)
+    store = item[0]
+    if AUTH_HEADER in store.request.headers and \
+                      store.request.headers[AUTH_HEADER] != '***':
+        raise ValueError("Auth header was serialized")
+    return item
+
+requests_cache.backends.storage.dbdict.DbPickleDict.__setitem__ = dbdict_set_item
+requests_cache.backends.storage.dbdict.DbPickleDict.__getitem__ = dbdict_get_item
+
 
 def use_requests_cache(cache):
     # TODO: Before we start to "freeze" results, ensure that the auth token is not cached
