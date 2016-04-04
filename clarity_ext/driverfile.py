@@ -1,82 +1,8 @@
 import os
-from clarity_ext.domain import Plate, Analyte
-from clarity_ext.dilution import DilutionScheme
-import importlib
-from utils import lazyprop
 import shutil
 import difflib
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.lims import Lims
 from genologics.epp import attach_file
 from genologics.entities import *
-from clarity_ext.extension_context import ExtensionContext
-import itertools
-
-
-# The object accessible during execution of the driver file script:
-# Contains things like the current plate.
-# The underlying connection objects etc. can be accessed through "advanced"
-class DriverFileContext:
-    """
-    Context object for DriverFile extensions
-
-    Provides context objects as lazy properties.
-    """
-    def __init__(self, current_step, advanced, logger=None):
-        self.current_step = current_step
-        self.advanced = advanced
-        self.logger = logger or logging.getLogger(__name__)
-
-    @lazyprop
-    def plate(self):
-        self.logger.debug("Getting current plate (lazy property)")
-        # TODO: Assumes 96 well plate only
-        plate = Plate()
-        for input, output in self.current_step.input_output_maps:
-            if output['output-generation-type'] == "PerInput":
-                # Process
-                artifact = output['uri']
-                location = artifact.location
-                well = location[1]
-                plate.set_well(well, artifact.name)
-        return plate
-
-    @lazyprop
-    def dilution_scheme(self):
-        # TODO: Might want to have this on a property called dilution
-        input_analytes, output_analytes = self._match_analytes(
-            self.input_analytes, self.output_analytes
-        )
-        return DilutionScheme(input_analytes,
-                              output_analytes,
-                              "Hamilton",
-                              12, 8)
-
-    @lazyprop
-    def input_analytes(self):
-        # Get an unique set of input analytes
-        # Trust the fact that all inputs are analytes, always true?
-        resources = self.current_step.all_inputs(unique=True, resolve=True)
-        return [Analyte(resource) for resource in resources]
-
-    @lazyprop
-    def output_analytes(self):
-        (analytes, info) = self.current_step.analytes()
-        if not info == 'Output':
-            raise ValueError("No output analytes for this step!")
-        resources = self.advanced.lims.get_batch(analytes)
-        return [Analyte(resource) for resource in resources]
-
-    @staticmethod
-    def _match_analytes(input_analytes, output_analytes):
-        """ Input and output analytes do not come in order from get_batch,
-            sort them so that they match with respect to sample ids"""
-        input_dict = dict([(input_.sample.id, input_)
-                           for input_ in input_analytes])
-        matched_analytes = [(input_dict[output_.sample.id], output_)
-                            for output_ in output_analytes]
-        input_analytes, output_analytes = zip(*matched_analytes)
-        return list(input_analytes), list(output_analytes)
 
 
 class DriverFileService:

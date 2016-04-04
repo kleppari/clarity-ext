@@ -5,7 +5,6 @@
 # Give error if any volume exceeds 51 ul
 
 from clarity_ext.extensions import DriverFileExtension
-from clarity_ext.extensions import DriverFileTest
 
 
 class Extension(DriverFileExtension):
