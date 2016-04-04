@@ -54,7 +54,6 @@ class ExtensionContext:
 
             # TODO: implemented in the genologics package?
             response = self.advanced.get("files/{}/download".format(file.id))
-            print "bab", response
             with open(local_path, 'wb') as fd:
                 for chunk in response.iter_content():
                     fd.write(chunk)

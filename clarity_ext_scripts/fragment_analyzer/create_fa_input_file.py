@@ -1,8 +1,8 @@
-from clarity_ext.extensions import DriverFileExt, ExtensionTest
+from clarity_ext.extensions import DriverFileExtension
 import datetime
 
 
-class Extension(DriverFileExt):
+class Extension(DriverFileExtension):
     """
     Creates an input file for the Fragment Analyzer.
     """
@@ -16,7 +16,6 @@ class Extension(DriverFileExt):
     def shared_file(self):
         """Returns the name of the shared file where this file should be hooked"""
         return "Sample List"
-
 
     def content(self):
         """Yields the lines to be written to the file"""

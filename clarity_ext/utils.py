@@ -12,5 +12,6 @@ def lazyprop(fn):
 
 
 def use_requests_cache(cache):
+    # TODO: Before we start to "freeze" results, ensure that the auth token is not cached
     requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'))
 

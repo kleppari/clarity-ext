@@ -1,13 +1,13 @@
-# Calculates dclarity-ext extension --args 'pid={processLuid} shared_file={compoundOutputFileLuid3}' clarity_ext_scripts.fragment_analyzer.generate_pdf_images execilute volumes, volume from sample and volume from buffer
+# Calculates dilute volumes, volume from sample and volume from buffer
 # for each analyte within a given process.
 # User provide target concentration and target volume for each analyte.
 # Give error if any volume is less than 2 ul
 # Give error if any volume exceeds 51 ul
 
-from clarity_ext.extensions import DriverFileExt, DriverFileTest
+from clarity_ext.extensions import DriverFileExtension
 
 
-class Extension(DriverFileExt):
+class Extension(DriverFileExtension):
     """Calculates dilute volumes and export to dilute driver file"""
 
     def content(self):
@@ -29,7 +29,7 @@ class Extension(DriverFileExt):
             yield "\t".join(row)
 
     def filename(self):
-        return "dilution.txt"  # TODO
+        return "dilution.txt"
 
     def shared_file(self):
         return "DriverFile_EEX_160317_24-3637"
