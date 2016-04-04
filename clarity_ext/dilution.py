@@ -91,11 +91,11 @@ class DilutionScheme:
     """Creates a dilution scheme, given input and output analytes."""
 
     def __init__(
-            self, input_analytes, output_analytes,
-            robot_name, plate_size_x, plate_size_y):
+            self, matched_analytes, robot_name, plate_size_x,
+            plate_size_y):
         """Calculates all derived values needed in dilute driver file """
 
-        self.dilutes = self._init_dilutes(input_analytes, output_analytes)
+        self.dilutes = self._init_dilutes(matched_analytes)
         robot_deck_positioner = RobotDeckPositioner(
             robot_name, self.dilutes, plate_size_x, plate_size_y)
 
@@ -144,8 +144,8 @@ class DilutionScheme:
             yield ValidationException("Sample has to be evaporated", ValidationType.WARNING)
 
     @staticmethod
-    def _init_dilutes(input_analytes, output_analytes):
+    def _init_dilutes(matched_analytes):
         dilutes = []
-        for in_analyte, out_analyte in zip(input_analytes, output_analytes):
+        for in_analyte, out_analyte in matched_analytes:
             dilutes.append(Dilute(in_analyte, out_analyte))
         return dilutes

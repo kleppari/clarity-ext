@@ -89,32 +89,10 @@ class ExtensionContext:
         return [Analyte(resource) for resource in resources]
 
     @lazyprop
-    def output_analytes(self):
-        (analytes, info) = self.current_step.analytes()
-        if not info == 'Output':
-            raise ValueError("No output analytes for this step!")
-        resources = self.advanced.lims.get_batch(analytes)
-        return [Analyte(resource) for resource in resources]
-
-    @staticmethod
-    def _match_analytes(input_analytes, output_analytes):
-        """ Input and output analytes do not come in order from get_batch,
-            sort them so that they match with respect to sample ids"""
-        input_dict = dict([(input_.sample.id, input_)
-                           for input_ in input_analytes])
-        matched_analytes = [(input_dict[output_.sample.id], output_)
-                            for output_ in output_analytes]
-        input_analytes, output_analytes = zip(*matched_analytes)
-        return list(input_analytes), list(output_analytes)
-
-    @lazyprop
     def dilution_scheme(self):
-        # TODO: Might want to have this on a property called dilution
-        input_analytes, output_analytes = self._match_analytes(
-            self.input_analytes, self.output_analytes
-        )
-        return DilutionScheme(input_analytes,
-                              output_analytes,
+        matched_analytes = MatchedAnalytes(self.input_analytes,
+                                           self.current_step, self.advanced)
+        return DilutionScheme(matched_analytes,
                               "Hamilton",
                               12, 8)
 
@@ -164,6 +142,48 @@ class ExtensionContext:
                                  "that it won't be uploaded again")
                 # TODO: Handle exception
                 os.remove(path)
+
+
+class MatchedAnalytes:
+    """ Provides a set of  matched input - output analytes for a process.
+    When fetching these by the batch_get(), they come in random order
+    """
+    def __init__(self, input_analytes, current_step, advanced):
+        self._input_analytes = input_analytes
+        self.advanced = advanced
+        self.current_step = current_step
+        (matched_in_analytes, matched_out_analytes) = self._match_analytes()
+        self.input_analytes = matched_in_analytes
+        self.output_analytes = matched_out_analytes
+        self._iteritems = iter(zip(self.input_analytes, self.output_analytes))
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        (input_analyte, output_analyte) = self._iteritems.next()
+        if input_analyte and output_analyte:
+            return input_analyte, output_analyte
+        else:
+            raise StopIteration
+
+    @lazyprop
+    def _output_analytes(self):
+        (analytes, info) = self.current_step.analytes()
+        if not info == 'Output':
+            raise ValueError("No output analytes for this step!")
+        resources = self.advanced.lims.get_batch(analytes)
+        return [Analyte(resource) for resource in resources]
+
+    def _match_analytes(self):
+        """ Match input and output analytes with sample ids"""
+        input_dict = dict([(input_.sample.id, input_)
+                           for input_ in self._input_analytes])
+        matched_analytes = [(input_dict[output_.sample.id], output_)
+                            for output_ in self._output_analytes]
+        input_analytes, output_analytes = zip(*matched_analytes)
+        return list(input_analytes), list(output_analytes)
+
 
 
 class Advanced:
