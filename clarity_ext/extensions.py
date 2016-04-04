@@ -27,11 +27,16 @@ class ExtensionService:
 
     def _run_path(self, args, module, mode, config):
         if mode == self.RUN_MODE_EXEC:
-            return "."
-        else:
+            return config["exec_root_path"]
+        elif mode == self.RUN_MODE_TEST or mode == self.RUN_MODE_FREEZE:
+            root = config["test_root_path"] if mode == self.RUN_MODE_TEST else config["frozen_root_path"]
+            # When testing or freezing, we need subdirectories based on the modules path
+            # so they don't get mixed up:
             module_parts = module.split(".")[1:]
             path = os.path.sep.join(module_parts)
-            return os.path.join(path, args["pid"], "run-" + mode)
+            return os.path.join(root, path, args["pid"], "run-" + mode)
+        else:
+            raise ValueError("Unexpected mode")
 
     def _parse_run_argument(self, in_argument):
         if isinstance(in_argument, str):
@@ -79,7 +84,7 @@ class ExtensionService:
                 print("  clarity-ext extension --args '{}' {} {}".format(
                     "pid={processLuid}",
                     module, self.RUN_MODE_EXEC))
-                print("To freeze the latest test run (set as reference data for future runs)")
+                print("To freeze the latest test run (set as reference data for future validations)")
                 print("  clarity-ext extension {} {}".format(
                     module, self.RUN_MODE_FREEZE))
 
@@ -124,12 +129,9 @@ class ExtensionService:
                   .format(frozen_root_path))
 
             for run_arguments in run_arguments_list:
-                test_path = self._run_path(run_arguments, module, self.RUN_MODE_TEST)
-                #frozen_path = self._test_path_for_test(test, module, self.RUN_MODE_FREEZE)
-                print(test_path)
-                continue
-                test_path = self._test_path_for_test(test, module, self.RUN_MODE_TEST)
-                print(frozen_path, "=>", test_path)
+                test_path = self._run_path(run_arguments, module, self.RUN_MODE_TEST, config)
+                frozen_path = self._run_path(run_arguments, module, self.RUN_MODE_FREEZE, config)
+                print(test_path, "=>", frozen_path)
                 if os.path.exists(frozen_path):
                     self.logger.info("Removing old frozen directory '{}'".format(frozen_path))
                     shutil.rmtree(frozen_path)
@@ -145,28 +147,6 @@ class GeneralExtension:
     __metaclass__ = ABCMeta
 
     def __init__(self, context):
-        self.context = context
-        self.logger = logging.getLogger(self.__class__.__module__)
-
-    def log(self, msg):
-        self.logger.info(msg)
-
-    @abstractmethod
-    def execute(self):
-        pass
-
-    def integration_tests(self):
-        return []
-
-    def test(self, pid):
-        """Creates a test instance suitable for this extension"""
-        return ResultFilesTest(pid=pid)
-
-
-class DriverFileExtension:
-    __metaclass__ = ABCMeta
-
-    def __init__(self, context):
         """
         @type context: clarity_ext.driverfile.DriverFileContext
 
@@ -176,6 +156,14 @@ class DriverFileExtension:
         """
         self.context = context
         self.logger = logging.getLogger(self.__class__.__module__)
+
+    def test(self, pid):
+        """Creates a test instance suitable for this extension"""
+        return ResultFilesTest(pid=pid)
+
+
+class DriverFileExtension(GeneralExtension):
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def content(self):
