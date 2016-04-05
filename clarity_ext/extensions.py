@@ -98,11 +98,22 @@ class ExtensionService:
                 frozen_path = self._run_path(run_arguments, module, self.RUN_MODE_FREEZE, config)
 
                 if mode == self.RUN_MODE_TEST:
+                    cache_file = '{}.sqlite'.format(self.CACHE_NAME)
+
                     # Remove everything but the cache files
                     if os.path.exists(path):
-                        utils.clean_directory(path, ['{}.sqlite'.format(self.CACHE_NAME)])
+                        utils.clean_directory(path, [cache_file])
                     else:
                         os.makedirs(path)
+
+                    # Copy the cache file from the frozen path if available:
+                    frozen_cache = os.path.join(frozen_path, cache_file)
+                    print("Copy frozen path", frozen_cache)
+                    if os.path.exists(frozen_cache):
+                        print("Frozen cache file exists and will be used")
+                        shutil.copy(frozen_cache, path)
+
+
 
                 old_dir = os.getcwd()
                 os.chdir(path)
@@ -171,6 +182,8 @@ class RunDirectoryInfo:
     def uploaded_files(self):
         """Returns a dictionary of uploaded files indexed by key"""
         ret = dict()
+        if not os.path.exists(self.uploaded_path):
+            return ret
         for file_name in os.listdir(self.uploaded_path):
             assert os.path.isfile(os.path.join(self.uploaded_path, file_name))
             match = re.match(r"(^92-\d+).*$", file_name)
