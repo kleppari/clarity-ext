@@ -110,7 +110,7 @@ class DriverFileIntegrationTests:
     def validate(self, run_directory, frozen_directory, test):
         pair = self._locate_driver_file_pair(run_directory, frozen_directory, test)
         fromfile, tofile = pair
-        fromlines = open(fromfile, 'r').readlines()  # U?
+        fromlines = open(fromfile, 'r').readlines()
         tolines = open(tofile, 'r').readlines()
         diff = list(difflib.unified_diff(fromlines, tolines, fromfile, tofile))
         if len(diff) > 0:

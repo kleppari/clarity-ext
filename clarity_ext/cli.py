@@ -3,6 +3,10 @@ import click
 import logging
 from clarity_ext.integration import IntegrationTestService
 from clarity_ext.extensions import ExtensionService
+import os
+import yaml
+
+config = None
 
 
 @click.group()
@@ -14,6 +18,11 @@ def main(level):
                 This is used to ensure reproducible and fast integration tests
     :return:
     """
+    global config
+    if os.path.exists("clarity-ext.config"):
+        with open("clarity-ext.config", "r") as f:
+            config = yaml.load(f)
+
     logging.basicConfig(level=level.upper())
 
 @main.command("integration-config")
@@ -70,18 +79,18 @@ def integration_freeze(config, name):
     integration_svc.freeze(config, name)
 
 
-@main.command("integration-validate")
-@click.argument("config")
-def integration_validate(config):
+@main.command("validate")
+@click.argument("module")
+def integration_validate(module):
     """
     Validates all frozen tests, by running them on the cached request/responses
     and comparing the output between the runs.
-
-    :param config: The configuration file to use
     :return:
     """
+    path = config["frozen_root_path"]
+    print("Validating all frozen tests in module {} found under {}".format(module, path))
     integration_svc = IntegrationTestService()
-    integration_svc.validate(config)
+    integration_svc.validate(path)
 
 
 @main.command()
@@ -98,7 +107,8 @@ def extension(module, mode, args):
         validate: Test the code locally, then compare with the frozen directory
     """
     extension_svc = ExtensionService()
-    extension_svc.execute(module, mode, args)
+    extension_svc.execute(module, mode, args, config)
 
 if __name__ == "__main__":
     main()
+
