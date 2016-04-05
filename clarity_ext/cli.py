@@ -79,18 +79,18 @@ def integration_freeze(config, name):
     integration_svc.freeze(config, name)
 
 
-@main.command("integration-validate")
-@click.argument("config")
-def integration_validate(config):
+@main.command("validate")
+@click.argument("module")
+def integration_validate(module):
     """
     Validates all frozen tests, by running them on the cached request/responses
     and comparing the output between the runs.
-
-    :param config: The configuration file to use
     :return:
     """
+    path = config["frozen_root_path"]
+    print("Validating all frozen tests in module {} found under {}".format(module, path))
     integration_svc = IntegrationTestService()
-    integration_svc.validate(config)
+    integration_svc.validate(path)
 
 
 @main.command()

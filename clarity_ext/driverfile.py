@@ -1,14 +1,8 @@
 import os
-from clarity_ext.domain import Plate, Analyte, DilutionScheme
-import importlib
-from utils import lazyprop
 import shutil
 import difflib
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.lims import Lims
 from genologics.epp import attach_file
 from genologics.entities import *
-from clarity_ext.context import ExtensionContext
 
 
 class DriverFileService:
@@ -111,7 +105,7 @@ class DriverFileIntegrationTests:
     def validate(self, run_directory, frozen_directory, test):
         pair = self._locate_driver_file_pair(run_directory, frozen_directory, test)
         fromfile, tofile = pair
-        fromlines = open(fromfile, 'r').readlines()  # U?
+        fromlines = open(fromfile, 'r').readlines()
         tolines = open(tofile, 'r').readlines()
         diff = list(difflib.unified_diff(fromlines, tolines, fromfile, tofile))
         if len(diff) > 0:

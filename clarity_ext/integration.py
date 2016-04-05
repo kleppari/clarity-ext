@@ -9,7 +9,6 @@ from driverfile import DriverFileIntegrationTests
 
 # Creates an integration test config file based on convention
 # i.e. position and contents of the script classes themselves.
-# TODO: Move all of this metaprogramming stuff to its own class
 class ConfigFromConventionProvider:
 
     @classmethod
@@ -152,8 +151,11 @@ class IntegrationTestService:
         :return:
         """
         config = ConfigFromConventionProvider.get_config_by_convention(module)
+        self.logger.debug("Got config for ...")
         for entry in config:
-            self._run(entry, entry["script"], force, validating)
+            self.logger.debug("Runin")
+            pass
+            #self._run(entry, entry["script"], force, validating)
 
     def _freeze_test(self, entry, test):
         source = self._test_run_directory(entry, test["pid"])

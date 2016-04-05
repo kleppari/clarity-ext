@@ -1,4 +1,6 @@
 import requests_cache
+import os
+import shutil
 
 # http://stackoverflow.com/a/3013910/282024
 def lazyprop(fn):
@@ -37,4 +39,15 @@ requests_cache.backends.storage.dbdict.DbPickleDict.__getitem__ = dbdict_get_ite
 def use_requests_cache(cache):
     # TODO: Before we start to "freeze" results, ensure that the auth token is not cached
     requests_cache.install_cache(cache, allowable_methods=('GET', 'POST', 'DELETE', 'PUT'))
+
+
+def clean_directory(path, skip=[]):
+    to_remove = (os.path.join(path, file_or_dir)
+                 for file_or_dir in os.listdir(path)
+                 if file_or_dir not in skip)
+    for item in to_remove:
+        if os.path.isdir(item):
+            shutil.rmtree(item)
+        else:
+            os.remove(item)
 
