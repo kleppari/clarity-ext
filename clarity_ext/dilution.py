@@ -31,10 +31,10 @@ class RobotDeckPositioner:
     Handle plate positions on the robot deck (target and source)
     as well as well indexing
      """
-    def __init__(self, robot_name, dilutes, plate_size_x, plate_size_y):
-        self.plate_size_x = plate_size_x
-        self.plate_size_y = plate_size_y
-        index_method_map = {"Hamilton": self._calculate_well_index_down_first}
+    def __init__(self, robot_name, dilutes, plate):
+        self.robot_name = robot_name
+        self.plate = plate
+        index_method_map = {"Hamilton": lambda well: well.index_down_first}
         self.indexer = index_method_map[robot_name]
         self.target_plate_sorting_map = self._build_plate_sorting_map(
             [dilute.target_container for dilute in dilutes])
@@ -51,17 +51,13 @@ class RobotDeckPositioner:
         """Sort dilutes according to plate and well positions in source
         :param dilute:
         """
-        plate_base_number = self.plate_size_y * self.plate_size_x + 1
+        plate_base_number = self.plate.size.width * self.plate.size.height + 1
         plate_sorting = self.source_plate_sorting_map[
             dilute.source_container.id]
         # Sort order for wells are always based on down first indexing
         # regardless the robot type
-        well_index = self._calculate_well_index_down_first(dilute.source_well)
-        return plate_sorting * plate_base_number + well_index
+        return plate_sorting * plate_base_number + dilute.source_well.index_down_first
 
-    def _calculate_well_index_down_first(self, well):
-        (y, x) = well.get_coordinates()
-        return x * self.plate_size_y + y + 1
 
     @staticmethod
     def _build_plate_position_map(plate_sorting_map, plate_pos_prefix):
@@ -86,38 +82,47 @@ class RobotDeckPositioner:
         plate_position_numbers = dict(zip(unique_containers, positions))
         return plate_position_numbers
 
+    def __str__(self):
+        return "<{type} {robot} {rows}x{cols}>".format(type=self.__class__.__name__,
+                                                       robot=self.robot_name,
+                                                       rows=self.plate_size_y,
+                                                       cols=self.plate_size_x)
+
+PLATE_TYPE_96_WELL = 1
+
+PlateDimensions = {
+    PLATE_TYPE_96_WELL: {"rows": 12, "cols": 8}
+}
 
 class DilutionScheme:
     """Creates a dilution scheme, given input and output analytes."""
 
-    def __init__(
-            self, matched_analytes, robot_name, plate_size_x,
-            plate_size_y):
+    def __init__(self, matched_analytes, robot_name, plate):
         """Calculates all derived values needed in dilute driver file """
 
         self.dilutes = self._init_dilutes(matched_analytes)
-        robot_deck_positioner = RobotDeckPositioner(
-            robot_name, self.dilutes, plate_size_x, plate_size_y)
+        self.robot_deck_positioner = RobotDeckPositioner(
+            robot_name, self.dilutes, plate)
 
         for dilute in self.dilutes:
-            dilute.source_well_index = robot_deck_positioner.indexer(
+            dilute.source_well_index = self.robot_deck_positioner.indexer(
                 dilute.source_well)
-            dilute.source_plate_pos = robot_deck_positioner.\
+            dilute.source_plate_pos = self.robot_deck_positioner.\
                 source_plate_position_map[dilute.source_container.id]
             dilute.sample_volume = \
                 dilute.target_concentration * dilute.target_volume / \
                 dilute.source_concentration
             dilute.buffer_volume = \
                 max(dilute.target_volume - dilute.sample_volume, 0)
-            dilute.target_well_index = robot_deck_positioner.indexer(
+            dilute.target_well_index = self.robot_deck_positioner.indexer(
                 dilute.target_well)
-            dilute.target_plate_pos = robot_deck_positioner\
+            dilute.target_plate_pos = self.robot_deck_positioner\
                 .target_plate_position_map[
                     dilute.target_container.id]
             dilute.has_to_evaporate = \
                 (dilute.target_volume - dilute.sample_volume) < 0
 
-        self._sort_dilutes(robot_deck_positioner)
+        self._sort_dilutes(self.robot_deck_positioner)
 
     def _sort_dilutes(self, robot_deck_positioner):
         new_sorting = []
@@ -149,3 +154,6 @@ class DilutionScheme:
         for in_analyte, out_analyte in matched_analytes:
             dilutes.append(Dilute(in_analyte, out_analyte))
         return dilutes
+
+    def __str__(self):
+        return "<DilutionScheme positioner={}>".format(self.robot_deck_positioner)

@@ -4,7 +4,6 @@ from genologics.entities import *
 import requests
 import os
 from clarity_ext.utils import lazyprop
-from clarity_ext.domain import *
 from clarity_ext.dilution import *
 
 
@@ -81,20 +80,22 @@ class ExtensionContext:
                 plate.set_well(well, artifact.name)
         return plate
 
-    @lazyprop
-    def input_analytes(self):
+    def _get_input_analytes(self, plate):
         # Get an unique set of input analytes
         # Trust the fact that all inputs are analytes, always true?
         resources = self.current_step.all_inputs(unique=True, resolve=True)
-        return [Analyte(resource) for resource in resources]
+        return [Analyte(resource, plate) for resource in resources]
 
     @lazyprop
     def dilution_scheme(self):
-        matched_analytes = MatchedAnalytes(self.input_analytes,
-                                           self.current_step, self.advanced)
-        return DilutionScheme(matched_analytes,
-                              "Hamilton",
-                              12, 8)
+        plate = Plate(plate_type=PLATE_TYPE_96_WELL)
+
+        input_analytes = self._get_input_analytes(plate)
+        # TODO: Seems like overkill to have a type for matching analytes, why not a gen. function?
+        matched_analytes = MatchedAnalytes(input_analytes,
+                                           self.current_step, self.advanced, plate)
+        # TODO: The caller needs to provide these parameters,
+        return DilutionScheme(matched_analytes, "Hamilton", plate)
 
     @lazyprop
     def shared_files(self):
@@ -148,42 +149,38 @@ class MatchedAnalytes:
     """ Provides a set of  matched input - output analytes for a process.
     When fetching these by the batch_get(), they come in random order
     """
-    def __init__(self, input_analytes, current_step, advanced):
+    def __init__(self, input_analytes, current_step, advanced, plate):
         self._input_analytes = input_analytes
         self.advanced = advanced
         self.current_step = current_step
-        (matched_in_analytes, matched_out_analytes) = self._match_analytes()
-        self.input_analytes = matched_in_analytes
-        self.output_analytes = matched_out_analytes
+        self.input_analytes, self.output_analytes = self._match_analytes(plate)
         self._iteritems = iter(zip(self.input_analytes, self.output_analytes))
 
     def __iter__(self):
         return self
 
     def next(self):
-        (input_analyte, output_analyte) = self._iteritems.next()
+        input_analyte, output_analyte = self._iteritems.next()
         if input_analyte and output_analyte:
             return input_analyte, output_analyte
         else:
             raise StopIteration
 
-    @lazyprop
-    def _output_analytes(self):
-        (analytes, info) = self.current_step.analytes()
+    def _get_output_analytes(self, plate):
+        analytes, info = self.current_step.analytes()
         if not info == 'Output':
             raise ValueError("No output analytes for this step!")
         resources = self.advanced.lims.get_batch(analytes)
-        return [Analyte(resource) for resource in resources]
+        return [Analyte(resource, plate) for resource in resources]
 
-    def _match_analytes(self):
+    def _match_analytes(self, plate):
         """ Match input and output analytes with sample ids"""
-        input_dict = dict([(input_.sample.id, input_)
-                           for input_ in self._input_analytes])
-        matched_analytes = [(input_dict[output_.sample.id], output_)
-                            for output_ in self._output_analytes]
+        input_dict = {_input.sample.id: _input
+                      for _input in self._input_analytes}
+        matched_analytes = [(input_dict[_output.sample.id], _output)
+                            for _output in self._get_output_analytes(plate)]
         input_analytes, output_analytes = zip(*matched_analytes)
         return list(input_analytes), list(output_analytes)
-
 
 
 class Advanced:

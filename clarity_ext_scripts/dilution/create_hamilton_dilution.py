@@ -37,4 +37,3 @@ class Extension(DriverFileExtension):
     def integration_tests(self):
         # The step used during design/last iteration of this extension:
         yield "24-3643"
-
