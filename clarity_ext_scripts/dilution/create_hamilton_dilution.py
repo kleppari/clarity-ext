@@ -20,21 +20,20 @@ class Extension(DriverFileExtension):
 
         for dilute in self.context.dilution_scheme.dilutes:
             row = [dilute.sample_name,
-                   "WellPosSource",
-                   "PlatePosSource",
-                   "{:.2f}".format(dilute.sample_volume),
-                   "{:.2f}".format(dilute.buffer_volume),
-                   "WellPosTarget",
-                   "PlatePosTarget"]
+                   "{}".format(dilute.source_well_index),
+                   dilute.source_plate_pos,
+                   "{:.1f}".format(dilute.sample_volume),
+                   "{:.1f}".format(dilute.buffer_volume),
+                   "{}".format(dilute.target_well_index),
+                   dilute.target_plate_pos]
             yield "\t".join(row)
 
     def filename(self):
         return "dilution.txt"
 
     def shared_file(self):
-        return "DriverFile_EEX_160317_24-3637"
+        return "DriverFile_EEX_160317_24-3643"
 
     def integration_tests(self):
         # The step used during design/last iteration of this extension:
-        yield "24-3637"
-
+        yield "24-3643"

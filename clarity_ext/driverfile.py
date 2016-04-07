@@ -35,6 +35,11 @@ class DriverFileService:
         return full_path
 
     def _upload(self, local_file, commit, artifacts_to_stdout):
+        self.logger.debug("Shared files: {}".format(
+            [artifact.name for artifact in
+             self.extension.context.shared_files]))
+        self.logger.debug("Shared file from extension: {}".format(
+            self.extension.shared_file()))
         artifacts = [shared_file for shared_file in self.extension.context.shared_files
                     if shared_file.name == self.extension.shared_file()]
         assert len(artifacts) == 1

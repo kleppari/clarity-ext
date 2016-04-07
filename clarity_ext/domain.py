@@ -1,13 +1,17 @@
+from collections import namedtuple
+from clarity_ext.utils import lazyprop
 
-class Analyte():
+
+class Analyte:
     """
     Describes an Analyte in the Clarity LIMS system, including custom UDFs.
 
     Takes an analyte resource as input.
     """
 
-    def __init__(self, resource):
+    def __init__(self, resource, plate):
         self.resource = resource
+        self.plate = plate
 
     # Mapped properties from the underlying resource
     # TODO: we might want to supply all of these via inheritance (or some Python trick)
@@ -33,14 +37,28 @@ class Analyte():
     @property
     def well(self):
         row, col = self.resource.location[1].split(":")
-        return Well(row, col)
+        return Well(row, col, self.plate)
+
+    @property
+    def container(self):
+        return self.resource.location[0]
+
+    @property
+    def sample(self):
+        return self.resource.samples[0]
+
+    def __repr__(self):
+        return "{} ({})".format(self.name, self.sample.id)
 
 
 class Well:
     """Encapsulates a well in a plate"""
-    def __init__(self, row, col, artifact_name=None, artifact_id=None):
+    def __init__(self, row, col, plate, artifact_name=None, artifact_id=None):
+        # TODO: Take only `PlatePosition` as an argument, which can be either the
+        # tuple, or a string similar to "A1"
         self.row = row
         self.col = col
+        self.plate = plate
         self.artifact_name = artifact_name
         self.row_index_dict = dict(
             [(row_str, row_ind)
@@ -59,14 +77,24 @@ class Well:
                                           self.artifact_id)
 
     def get_coordinates(self):
-        # Zero based
-        return self.row_index_dict[self.row], int(self.col) - 1
+        """Returns a PlatePosition tuple, with zero based indexes"""
+        return PlatePosition(row=self.row_index_dict[self.row], col=int(self.col) - 1)
+
+    @property
+    def index_down_first(self):
+        pos = self.get_coordinates()
+        return pos.col * self.plate.size.height + pos.row + 1
 
 
-# TODO: Use PlatePosition as plate key to handle different representations
-from collections import namedtuple
 class PlatePosition(namedtuple("PlatePosition", ["row", "col"])):
+    """Defines the position of the plate, (zero based)"""
     pass
+
+
+class PlateSize(namedtuple("PlateSize", ["height", "width"])):
+    """Defines the size of a plate"""
+    pass
+
 
 class Plate:
     """Encapsulates a Plate"""
@@ -74,22 +102,36 @@ class Plate:
     DOWN_FIRST = 1
     RIGHT_FIRST = 2
 
-    def __init__(self, mapping=None):
+    PLATE_TYPE_96_WELLS = 1
+
+    def __init__(self, mapping=None, plate_type=None):
         """
         :param mapping: A dictionary-like object containing mapping from well
         position to content. It can be non-complete.
         :return:
         """
-        self.wells = {}
+        self.mapping = mapping
+        self.plate_type = plate_type
+        self.size = None
+
+        if self.plate_type == self.PLATE_TYPE_96_WELLS:
+            self.size = PlateSize(height=8, width=12)
+        else:
+            self.size = None
+
+    @lazyprop
+    def wells(self):
+        ret = dict()
         for row, col in self._traverse():
             key = "{}:{}".format(row, col)
-            content = mapping[key] if mapping and key in mapping else None
-            self.wells[(row, col)] = Well(row, col, content)
+            content = self.mapping[key] if self.mapping and key in self.mapping else None
+            ret[(row, col)] = Well(row, col, content)
+        return ret
 
     def _traverse(self, order=DOWN_FIRST):
         """Traverses the well in a certain order, yielding keys as (row,col) tuples"""
 
-        # TODO: Provide support for other formats
+        # TODO: Provide support for other formats (plate_type is ignored)
         # TODO: Make use of functional prog. - and remove dup.
         # TODO: NOTE! RIGHT_FIRST/DOWN_FIRST where switched. Fix all scripts before checking in.
         if order == self.RIGHT_FIRST:
@@ -127,55 +169,6 @@ class Plate:
     def well_key_to_tuple(self, key):
         return key.split(":")
 
-class Dilute:
-    # Enclose sample data, user input and derived variables for a
-    # single row in a dilution
-    def __init__(self, input_analyte, output_analyte):
-        self.target_concentration = output_analyte.target_concentration
-        self.target_volume = output_analyte.target_volume
-
-        # TODO: Ensure that the domain object sets these to None if not available
-        # TODO: Add the following condition to the validation stuff:
-        # if self.target_concentration is None or self.target_volume is None:
-        self.target_well = output_analyte.well
-        self.sample_name = output_analyte.name
-        self.source_concentration = input_analyte.concentration
-        self.sample_volume = None
-        self.buffer_volume = None
-        self.has_to_evaporate = None
-
-
-class DilutionScheme:
-    """Creates a dilution scheme, given input and output analytes."""
-
-    def __init__(self, input_analytes, output_analytes):
-        self.dilutes = []
-        for in_analyte, out_analyte in zip(input_analytes, output_analytes):
-            self.dilutes.append(Dilute(in_analyte, out_analyte))
-
-        for dilute in self.dilutes:
-            dilute.sample_volume = \
-                dilute.target_concentration * dilute.target_volume / \
-                dilute.source_concentration
-            dilute.buffer_volume = \
-                max(dilute.target_volume - dilute.sample_volume, 0)
-            dilute.has_to_evaporate = \
-                (dilute.target_volume - dilute.sample_volume) < 0
-
-    def validate(self):
-        """Yields validation errors or warnings"""
-        if any(dilute.sample_volume < 2 for dilute in self.dilutes):
-            yield ValidationException("Too low sample volume")
-
-        if any(dilute.sample_volume > 50 for dilute in self.dilutes):
-            yield ValidationException("Too high sample volume")
-
-        if any(dilute.buffer_volume > 50 for dilute in self.dilutes):
-            yield ValidationException("Too high buffer volume")
-
-        if any(dilute.has_to_evaporate for dilute in self.dilutes):
-            yield ValidationException("Sample has to be evaporated", ValidationType.WARNING)
-
 
 class ValidationType:
     ERROR = 1
@@ -190,7 +183,7 @@ class ValidationException:
     def _repr_type(self):
         if self.type == ValidationType.ERROR:
             return "Error"
-        elif self.type == ValidationException.WARNING:
+        elif self.type == ValidationType.WARNING:
             return "Warning"
 
     def __repr__(self):
